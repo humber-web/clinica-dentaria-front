@@ -1,18 +1,36 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 
 const route = useRoute()
 
 const breadcrumbMap: Record<string, string> = {
-  '/master/clinics': 'Manage Clinics',
-  '/master/users': 'Manage Users',
+  '/master/clinics': 'Gerir Clínicas',
+  '/master/users': 'Gerir Utilizadores',
+  '/master/clinics/settings': 'Configurações',
+  '/master/settings': 'Configurações',
+  '/master/stock': 'Gerir Stock',
+  '/master/reports': 'Relatórios',
   // add more as needed
 }
 
-const breadcrumbText = computed(() =>
-  Object.entries(breadcrumbMap).find(([key]) =>
-    route.path.startsWith(key)
-  )?.[1] || route.path
+
+const mainSection = computed(() => {
+  // Match both /master/clinics and /master/clinic/:id
+  if (route.path.startsWith('/master/clinics')) return '/master/clinics'
+  if (route.path.match(/^\/master\/clinic\/\d+/)) return '/master/clinics'
+  if (route.path.startsWith('/master/users')) return '/master/users'
+  return route.path
+})
+
+const mainBreadcrumbText = computed(() =>
+  breadcrumbMap[mainSection.value] || mainSection.value
 )
+
+const subpageBreadcrumbText = computed(() => {
+  if (route.path.match(/^\/master\/clinic\/\d+\/settings/)) return 'Configurações'
+  return ''
+})
 </script>
 
 <template>
@@ -27,18 +45,15 @@ const breadcrumbText = computed(() =>
             <BreadcrumbList>
               <BreadcrumbItem class="hidden md:block">
                 <BreadcrumbLink as-child>
-                  <NuxtLink :to="route.path">
-                    {{ breadcrumbText }}
+                  <NuxtLink :to="mainSection">
+                    {{ mainBreadcrumbText }}
                   </NuxtLink>
                 </BreadcrumbLink>
               </BreadcrumbItem>
-              <!-- Optionally, add a separator and a page label if you have subpages -->
-              
-              <BreadcrumbSeparator class="hidden md:block" />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Current Subpage</BreadcrumbPage>
+              <BreadcrumbSeparator class="hidden md:block" v-if="subpageBreadcrumbText" />
+              <BreadcrumbItem v-if="subpageBreadcrumbText">
+                <BreadcrumbPage>{{ subpageBreadcrumbText }}</BreadcrumbPage>
               </BreadcrumbItem>
-             
             </BreadcrumbList>
           </Breadcrumb>
         </div>

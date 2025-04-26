@@ -26,9 +26,18 @@ const props = defineProps<{
     email_envio?: string
   }[]
 }>()
-
+const showAddClinicModal = ref(false)
 const { isMobile } = useSidebar()
 const activeTeam = ref(props.teams[0])
+
+function handleClinicSaved(newClinic) {
+  showAddClinicModal.value = false
+  // Optionally emit an event or refresh clinics list here
+}
+
+function handleClinicCancel() {
+  showAddClinicModal.value = false
+}
 
 // Atualiza o activeTeam se a lista mudar
 watch(
@@ -90,7 +99,7 @@ watch(
             <DropdownMenuShortcut>⌘{{ index + 1 }}</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem class="gap-2 p-2">
+          <DropdownMenuItem class="gap-2 p-2" @click="showAddClinicModal = true">
             <div class="flex size-6 items-center justify-center rounded-md border bg-background">
               <Plus class="size-4" />
             </div>
@@ -101,5 +110,14 @@ watch(
         </DropdownMenuContent>
       </DropdownMenu>
     </SidebarMenuItem>
+    <Dialog v-model:open="showAddClinicModal">
+    <DialogContent>
+      <ClinicsClinicForm
+        @save="handleClinicSaved"
+        @cancel="handleClinicCancel"
+        :clinics="teams"
+      />
+    </DialogContent>
+  </Dialog>
   </SidebarMenu>
 </template>

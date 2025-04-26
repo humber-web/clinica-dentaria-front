@@ -205,10 +205,12 @@ function handleAssignProfilesSaved(perfil: User["perfil"]) {
 function openAssignClinic(user: User) {
   selectedUser.value = user;
   showAssignClinicDialog.value = true;
+  
 }
 
 function handleAssignClinicasSaved() {
   // if (selectedUser.value) selectedUser.value.clinicas = selectedClinic.value;
+  fetchUsers();
   closeAuxDialogs();
 }
 

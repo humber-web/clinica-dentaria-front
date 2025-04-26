@@ -8,6 +8,10 @@ import {
   Settings,
   TrendingUp,
   Users,
+  UserCog,
+  Building2,
+  ClipboardList,
+  BarChart2,
 } from "lucide-vue-next";
 
 // Tipagem para os itens do menu
@@ -85,63 +89,63 @@ onMounted(async () => {
 const menuConfigurations: MenuConfigurations = {
   gerente: [
     {
-      title: "Home",
+      title: "Início",
       url: "/diretor",
       icon: Home,
       children: [
-        { title: "Overview", url: "/diretor/overview" },
-        { title: "Equipe", url: "/diretor/team" },
+        { title: "Resumo", url: "/diretor/overview" },
+        { title: "Equipa", url: "/diretor/team" },
       ],
     },
-    { title: "Dashboard", url: "/diretor/dashboard", icon: Inbox },
-    { title: "Clinics", url: "/diretor/clinics", icon: Users },
-    { title: "Reports", url: "/diretor/reports", icon: TrendingUp },
-    { title: "Settings", url: "/diretor/settings", icon: Settings },
+    { title: "Painel", url: "/diretor/dashboard", icon: BarChart2 },
+    { title: "Clínicas", url: "/diretor/clinics", icon: Building2 },
+    { title: "Relatórios", url: "/diretor/reports", icon: TrendingUp },
+    { title: "Definições", url: "/diretor/settings", icon: Settings },
   ],
   master_admin: [
     {
-      title: "Home",
+      title: "Início",
       url: "/master",
       icon: Home,
       children: [
-        { title: "Overview", url: "/master/overview" },
-        { title: "Equipe", url: "/master/team" },
+        { title: "Resumo", url: "/master/overview" },
+        { title: "Equipa", url: "/master/team" },
       ],
     },
-    { title: "Settings", url: "/master/settings", icon: Settings },
-    { title: "Manage Clinics", url: "/master/clinics", icon: Users },
-    { title: "Manage Users", url: "/master/users", icon: Users },
-    { title: "Subscriptions", url: "/master/subscriptions", icon: Inbox },
-    { title: "Reports", url: "/master/reports", icon: TrendingUp },
+    { title: "Definições", url: "/master/settings", icon: Settings },
+    { title: "Gerir Clínicas", url: "/master/clinics", icon: Building2 },
+    { title: "Gerir Utilizadores", url: "/master/users", icon: UserCog },
+    { title: "Gerir Stock", url: "/master/stock", icon: ClipboardList },
+    { title: "Relatórios", url: "/master/reports", icon: TrendingUp },
   ],
   doctor: [
     {
-      title: "Home",
+      title: "Início",
       url: "/doctor",
       icon: Home,
       children: [
-        { title: "Overview", url: "/doctor/overview" },
-        { title: "Equipe", url: "/doctor/team" },
+        { title: "Resumo", url: "/doctor/overview" },
+        { title: "Equipa", url: "/doctor/team" },
       ],
     },
-    { title: "My Schedule", url: "/doctor/schedule", icon: Calendar },
-    { title: "Patients", url: "/doctor/patients", icon: Inbox },
-    { title: "Reports", url: "/doctor/reports", icon: TrendingUp },
-    { title: "Settings", url: "/doctor/settings", icon: Settings },
+    { title: "Agenda", url: "/doctor/schedule", icon: Calendar },
+    { title: "Pacientes", url: "/doctor/patients", icon: Users },
+    { title: "Relatórios", url: "/doctor/reports", icon: TrendingUp },
+    { title: "Definições", url: "/doctor/settings", icon: Settings },
   ],
   assistant: [
     {
-      title: "Home",
+      title: "Início",
       url: "/assistant",
       icon: Home,
       children: [
-        { title: "Overview", url: "/assistant/overview" },
-        { title: "Equipe", url: "/assistant/team" },
+        { title: "Resumo", url: "/assistant/overview" },
+        { title: "Equipa", url: "/assistant/team" },
       ],
     },
     { title: "Agenda", url: "/assistant/agenda", icon: Calendar },
-    { title: "Search", url: "/assistant/search", icon: Search },
-    { title: "Settings", url: "/assistant/settings", icon: Settings },
+    { title: "Pesquisar", url: "/assistant/search", icon: Search },
+    { title: "Definições", url: "/assistant/settings", icon: Settings },
   ],
   // Adicione outros perfis conforme necessário
 };

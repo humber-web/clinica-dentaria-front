@@ -208,7 +208,7 @@ function onCancel() {
       <Label for="partilha_dados" class="text-right">Partilha de Dados</Label>
       <div class="col-span-3 flex items-center space-x-2">
         <Switch id="partilha_dados" v-model="form.partilha_dados" />
-        <Label for="partilha_dados">Ativar partilha de dados {{form.partilha_dados}}</Label>
+        <Label for="partilha_dados">Ativar partilha de dados</Label>
       </div>
     </div>
     <DialogFooter>
