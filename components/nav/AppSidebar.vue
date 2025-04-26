@@ -1,0 +1,247 @@
+<script setup lang="ts">
+import {
+  ChevronDown,
+  Calendar,
+  Home,
+  Inbox,
+  Search,
+  Settings,
+  TrendingUp,
+  Users,
+} from "lucide-vue-next";
+
+// Tipagem para os itens do menu
+type MenuItem = {
+  title: string;
+  url: string;
+  icon: any;
+  children?: { title: string; url: string }[];
+};
+type MenuConfigurations = {
+  [key: string]: MenuItem[];
+  gerente: MenuItem[];
+  master_admin: MenuItem[];
+  doctor: MenuItem[];
+  assistant: MenuItem[];
+};
+
+const userRole = ref("assistant"); // valor padrão
+const user = ref<{ name: string; email: string; avatar: string }>({
+  name: "",
+  email: "",
+  avatar: "",
+});
+
+const clinicas = ref<any[]>([]);
+
+const config = useRuntimeConfig();
+const baseUrl = config.public.apiBase;
+
+// Busca o perfil real do usuário ao montar o componente
+onMounted(async () => {
+  const token = useCookie("token").value;
+  if (!token) {
+    router.push("/login");
+    return;
+  }
+  const { data: userData, error } = await useFetch<any>(
+    `${baseUrl}utilizadores/me`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  if (error.value) {
+    router.push("/login");
+    return;
+  }
+  if (token) {
+    // Use outro nome para o resultado do fetch!
+    const { data: userData } = await useFetch<any>(
+      `${baseUrl}utilizadores/me`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    if (
+      userData.value &&
+      userData.value.perfil &&
+      userData.value.perfil.perfil
+    ) {
+      userRole.value = userData.value.perfil.perfil;
+      user.value = {
+        name: userData.value.nome || userData.value.username || "",
+        email: userData.value.email || "",
+        avatar: userData.value.avatar || "",
+      };
+    }
+    const { data: clinicasData } = await useFetch<any>(`${baseUrl}clinica`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    clinicas.value = clinicasData.value || [];
+  }
+});
+
+// Defina os menus conforme o perfil técnico
+const menuConfigurations: MenuConfigurations = {
+  gerente: [
+    {
+      title: "Home",
+      url: "/diretor",
+      icon: Home,
+      children: [
+        { title: "Overview", url: "/diretor/overview" },
+        { title: "Equipe", url: "/diretor/team" },
+      ],
+    },
+    { title: "Dashboard", url: "/diretor/dashboard", icon: Inbox },
+    { title: "Clinics", url: "/diretor/clinics", icon: Users },
+    { title: "Reports", url: "/diretor/reports", icon: TrendingUp },
+    { title: "Settings", url: "/diretor/settings", icon: Settings },
+  ],
+  master_admin: [
+    {
+      title: "Home",
+      url: "/master",
+      icon: Home,
+      children: [
+        { title: "Overview", url: "/master/overview" },
+        { title: "Equipe", url: "/master/team" },
+      ],
+    },
+    { title: "Settings", url: "/master/settings", icon: Settings },
+    { title: "Manage Clinics", url: "/master/clinics", icon: Users },
+    { title: "Manage Users", url: "/master/users", icon: Users },
+    { title: "Subscriptions", url: "/master/subscriptions", icon: Inbox },
+    { title: "Reports", url: "/master/reports", icon: TrendingUp },
+  ],
+  doctor: [
+    {
+      title: "Home",
+      url: "/doctor",
+      icon: Home,
+      children: [
+        { title: "Overview", url: "/doctor/overview" },
+        { title: "Equipe", url: "/doctor/team" },
+      ],
+    },
+    { title: "My Schedule", url: "/doctor/schedule", icon: Calendar },
+    { title: "Patients", url: "/doctor/patients", icon: Inbox },
+    { title: "Reports", url: "/doctor/reports", icon: TrendingUp },
+    { title: "Settings", url: "/doctor/settings", icon: Settings },
+  ],
+  assistant: [
+    {
+      title: "Home",
+      url: "/assistant",
+      icon: Home,
+      children: [
+        { title: "Overview", url: "/assistant/overview" },
+        { title: "Equipe", url: "/assistant/team" },
+      ],
+    },
+    { title: "Agenda", url: "/assistant/agenda", icon: Calendar },
+    { title: "Search", url: "/assistant/search", icon: Search },
+    { title: "Settings", url: "/assistant/settings", icon: Settings },
+  ],
+  // Adicione outros perfis conforme necessário
+};
+
+const menuItems = computed(() => {
+  // fallback para 'assistant' se não encontrar o perfil
+  return menuConfigurations[userRole.value] || menuConfigurations["assistant"];
+});
+
+// Dropdown state for each menu item
+const openIndexes = ref<number[]>([]);
+
+function toggleDropdown(idx: number) {
+  if (openIndexes.value.includes(idx)) {
+    openIndexes.value = openIndexes.value.filter((i) => i !== idx);
+  } else {
+    openIndexes.value.push(idx);
+  }
+}
+
+const teams = [
+  { name: "Acme Inc", logo: Home, plan: "Enterprise" },
+  { name: "Acme Corp.", logo: Users, plan: "Startup" },
+  { name: "Evil Corp.", logo: Settings, plan: "Free" },
+];
+
+const router = useRouter();
+
+async function handleLogout() {
+  const token = useCookie("token");
+  try {
+    await $fetch(`${baseUrl}logout`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token.value}` },
+    });
+  } catch (e) {
+    // Ignore erros de logout (token expirado, etc)
+  }
+  token.value = null;
+  router.push("/login");
+}
+</script>
+
+<template>
+  <Sidebar>
+    <Toaster />
+    <SidebarHeader>
+      <NavClinicSwitcher :teams="clinicas" />
+    </SidebarHeader>
+    <SidebarContent>
+      <SidebarGroup>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem v-for="(item, idx) in menuItems" :key="item.title">
+              <SidebarMenuButton asChild>
+                <div>
+                  <NuxtLink
+                    :to="item.url"
+                    class="flex items-center gap-2"
+                    v-if="!item.children"
+                  >
+                    <component :is="item.icon" class="w-4 h-4" />
+                    <span>{{ item.title }}</span>
+                  </NuxtLink>
+                  <button
+                    v-else
+                    type="button"
+                    class="flex items-center gap-2 w-full"
+                    @click="toggleDropdown(idx)"
+                  >
+                    <component :is="item.icon" class="w-4 h-4" />
+                    <span>{{ item.title }}</span>
+                    <ChevronDown
+                      class="ml-auto transition-transform"
+                      :class="{ 'rotate-180': openIndexes.includes(idx) }"
+                    />
+                  </button>
+                </div>
+              </SidebarMenuButton>
+              <!-- Subitens dropdown -->
+              <ul
+                v-if="item.children && openIndexes.includes(idx)"
+                class="pl-8 mt-1"
+              >
+                <li v-for="sub in item.children" :key="sub.title">
+                  <NuxtLink
+                    :to="sub.url"
+                    class="block px-2 py-1 text-sm hover:underline"
+                  >
+                    {{ sub.title }}
+                  </NuxtLink>
+                </li>
+              </ul>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    </SidebarContent>
+    <SidebarFooter>
+      <NavUser :user="user" @logout="handleLogout" />
+    </SidebarFooter>
+  </Sidebar>
+</template>
