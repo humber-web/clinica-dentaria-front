@@ -166,11 +166,7 @@ function toggleDropdown(idx: number) {
   }
 }
 
-const teams = [
-  { name: "Acme Inc", logo: Home, plan: "Enterprise" },
-  { name: "Acme Corp.", logo: Users, plan: "Startup" },
-  { name: "Evil Corp.", logo: Settings, plan: "Free" },
-];
+
 
 const router = useRouter();
 
@@ -193,7 +189,7 @@ async function handleLogout() {
   <Sidebar>
     <Toaster />
     <SidebarHeader>
-      <NavClinicSwitcher :teams="clinicas" />
+      <NavClinicSwitcher :clinics="clinicas" />
     </SidebarHeader>
     <SidebarContent>
       <SidebarGroup>

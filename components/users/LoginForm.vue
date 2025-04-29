@@ -6,6 +6,7 @@ type UserResponse = { perfil: { perfil: string } | null };
 
 const config = useRuntimeConfig();
 const baseUrl = config.public.apiBase;
+const userState = useState<UserResponse | null>('user', () => null);
 
 const email = ref("");
 const password = ref("");
@@ -45,6 +46,8 @@ const onSubmit = async (e: Event) => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+      userState.value = user.value;
+      
       if (user.value && user.value.perfil && user.value.perfil.perfil) {
         switch (user.value.perfil.perfil) {
           case "frontdesk":
