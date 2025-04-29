@@ -38,6 +38,7 @@ const showItemDialog = ref(false);
 const showMovementDialog = ref(false);
 const isNew = ref(true);
 const selectedItemId = ref<number | null>(null);
+const transfer = ref(<string>"");
 
 const config = useRuntimeConfig();
 const baseUrl = config.public.apiBase;
@@ -68,6 +69,8 @@ async function fetchItems() {
   }
 }
 
+
+
 function openItemDialog(create = true, item?: Item) {
   isNew.value = create;
   showItemDialog.value = true;
@@ -79,7 +82,11 @@ function closeItemDialog() {
   selectedItemId.value = null;
 }
 
-function openMovementDialog() {
+function openMovementDialog(isTransfer = false, item: Item) {
+  if (isTransfer) {
+    selectedItemId.value = item?.id ?? null;
+    transfer.value = "transferencia";
+  }
   showMovementDialog.value = true;
 }
 
@@ -153,7 +160,7 @@ onMounted(fetchItems);
             :items="items"
             @edit="(item) => openItemDialog(false, item)"
             @selectItem="onSelectItem"
-            @delete="null"
+            @transfer="openMovementDialog(true, $event)"
           />
 
           <!-- Pagination -->
@@ -190,6 +197,8 @@ onMounted(fetchItems);
     <StockMovementDialog
       :open="showMovementDialog"
       :items="items"
+      :defaultItemId="selectedItemId"
+      :defaultTipo="transfer"
       @close="showMovementDialog = false"
       @saved="fetchItems"
     />

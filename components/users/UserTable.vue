@@ -54,7 +54,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="overflow-auto">
+  <div class="w-full overflow-x-auto">
     <Table class="w-full text-sm">
       <TableCaption>Lista de utilizadores</TableCaption>
       <TableHeader>

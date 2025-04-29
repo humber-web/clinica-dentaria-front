@@ -113,7 +113,7 @@ function redirectToConfig(clinic: Clinic) {
         class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
         <h1 class="text-2xl font-bold tracking-tight">Clínicas</h1>
-        <div class="flex items-center gap-2">
+        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Button @click="newClinic" variant="default">
             <Plus class="mr-2 h-4 w-4" />
             Nova Clínica

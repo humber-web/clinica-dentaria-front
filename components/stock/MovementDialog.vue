@@ -8,6 +8,7 @@ const props = defineProps<{
   open: boolean;
   items: { id: number; nome: string }[];
   defaultItemId?: number | null;
+  defaultTipo?: string;
 }>();
 
 const emit = defineEmits<{
@@ -15,6 +16,17 @@ const emit = defineEmits<{
   (e: "saved"): void;
 }>();
 
+type Clinic = {
+  id: number;
+  nome: string;
+  morada?: string;
+  email_envio?: string;
+};
+
+const selectedClinic = useState<Clinic | null>("selectedClinic");
+const config = useRuntimeConfig();
+const baseUrl = config.public.apiBase;
+const { toast } = useToast();
 const show = ref(props.open);
 const selectedItemId = ref<number | null>(props.defaultItemId ?? null);
 const tipo = ref("");
@@ -22,12 +34,39 @@ const quantidade = ref<number | null | undefined>(undefined);
 const justificacao = ref("");
 const user = useState<{ id: number } | null>("user");
 const lote = ref("");
-// Accept any type for validade to match DatePicker's emitted value
 const validade = ref<any>(undefined);
+const destino_id = ref<number | null>(null);
+const clinics = ref<{ id: number; nome: string }[]>([]);
+
+const filteredClinics = computed(() =>
+  clinics.value.filter(
+    (c) => !selectedClinic.value || c.id !== selectedClinic.value.id
+  )
+);
+
+watch(
+  () => props.defaultTipo,
+  (val) => {
+    if (val !== undefined && val !== null) {
+      tipo.value = val;
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => props.defaultItemId,
+  (val) => {
+    if (val !== undefined && val !== null) {
+      selectedItemId.value = val;
+    }
+  },
+  { immediate: true }
+);
 
 watch(
   () => props.open,
-  (val) => (show.value = val)
+  (val) => (show.value = val),
 );
 
 watch(
@@ -37,6 +76,12 @@ watch(
   }
 );
 
+watch([selectedItemId, tipo], async ([itemId, tipoValue]) => {
+  if (tipoValue === "transferencia" && itemId) {
+    clinics.value = (await fetchClinis()) || [];
+  }
+});
+
 function resetForm() {
   selectedItemId.value = props.defaultItemId ?? null;
   tipo.value = "";
@@ -44,6 +89,24 @@ function resetForm() {
   justificacao.value = "";
   lote.value = "";
   validade.value = undefined;
+  destino_id.value = null;
+}
+
+async function fetchClinis() {
+  const token = useCookie("token").value;
+  try {
+    const res = await fetch(`${baseUrl}clinica`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!res.ok) throw new Error("Erro ao buscar clínicas");
+    return await res.json();
+  } catch (e) {
+    toast({
+      title: "Erro ao buscar clínicas",
+      description: e instanceof Error ? e.message : String(e),
+      variant: "destructive",
+    });
+  }
 }
 
 async function save() {
@@ -72,6 +135,8 @@ async function save() {
       payload.validade = validade.value
         ? validade.value.toString() // or format as needed
         : "";
+    } else if (tipo.value === "transferencia") {
+      payload.destino_id = destino_id.value;
     }
 
     const res = await fetch(
@@ -135,24 +200,25 @@ async function save() {
                 <SelectItem value="entrada">Entrada</SelectItem>
                 <SelectItem value="saida">Saída</SelectItem>
                 <SelectItem value="ajuste">Ajuste</SelectItem>
+                <SelectItem value="transferencia">Transferência</SelectItem>
               </SelectContent>
             </Select>
           </div>
-                  <div class="space-y-2">
-          <Label for="movement-quantity">Quantidade</Label>
-          <NumberField
-            id="movement-quantity"
-            v-model="quantidade"
-            :min="1"
-            :default-value="1"
-          >
-            <NumberFieldContent>
-              <NumberFieldDecrement />
-              <NumberFieldInput />
-              <NumberFieldIncrement />
-            </NumberFieldContent>
-          </NumberField>
-        </div>
+          <div class="space-y-2">
+            <Label for="movement-quantity">Quantidade</Label>
+            <NumberField
+              id="movement-quantity"
+              v-model="quantidade"
+              :min="1"
+              :default-value="1"
+            >
+              <NumberFieldContent>
+                <NumberFieldDecrement />
+                <NumberFieldInput />
+                <NumberFieldIncrement />
+              </NumberFieldContent>
+            </NumberField>
+          </div>
         </div>
         <!-- Show lote and validade only for entrada -->
         <div
@@ -183,6 +249,24 @@ async function save() {
             />
           </div>
         </div>
+        <div v-else-if="tipo === 'transferencia'" class="space-y-2">
+          <Label for="movement-clinica">Clínica de destino</Label>
+          <Select v-model="destino_id">
+            <SelectTrigger id="movement-clinica">
+              <SelectValue placeholder="Selecionar clínica" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                v-for="clinica in filteredClinics"
+                :key="clinica.id"
+                :value="clinica.id"
+              >
+                {{ clinica.nome }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <div class="space-y-2">
           <Label for="movement-reason">Justificação</Label>
           <Textarea

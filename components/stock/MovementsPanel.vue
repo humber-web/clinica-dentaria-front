@@ -20,7 +20,9 @@ const movements = ref<any[]>([]);
 const loading = ref(false);
 
 const sortOrder = ref<"desc" | "asc">("desc");
-const filterTipo = ref<"all" | "entrada" | "saida" | "ajuste">("all");
+const filterTipo = ref<
+  "all" | "entrada" | "saida" | "ajuste" | "transferencia"
+>("all");
 
 async function fetchItemAndMovements(id: number) {
   loading.value = true;
@@ -91,8 +93,11 @@ watch(
     <CardContent class="p-4 space-y-3">
       <div class="flex flex-wrap gap-x-2 gap-y-2 mb-2 items-center">
         <Label class="text-xs">Ordenar:</Label>
-        <Select v-model="sortOrder" class="min-w-0 max-w-full w-full sm:w-[130px]">
-          <SelectTrigger >
+        <Select
+          v-model="sortOrder"
+          class="min-w-0 max-w-full w-full sm:w-[130px]"
+        >
+          <SelectTrigger>
             <SelectValue placeholder="Ordenar por" />
           </SelectTrigger>
           <SelectContent>
@@ -105,21 +110,24 @@ watch(
         </Select>
         <Label class="text-xs ml-0 sm:ml-4">Filtrar:</Label>
 
-        <Select v-model="filterTipo" class="min-w-0 max-w-full w-full sm:w-[130px]">
-            <SelectTrigger >
-                <SelectValue placeholder="Tipo de movimento" />
-            </SelectTrigger>
-            <SelectContent>
-                <SelectGroup>
-                <SelectLabel>Tipo</SelectLabel>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="entrada">Entrada</SelectItem>
-                <SelectItem value="saida">Saída</SelectItem>
-                <SelectItem value="ajuste">Ajuste</SelectItem>
-                </SelectGroup>
-            </SelectContent>
+        <Select
+          v-model="filterTipo"
+          class="min-w-0 max-w-full w-full sm:w-[130px]"
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Tipo de movimento" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Tipo</SelectLabel>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="entrada">Entrada</SelectItem>
+              <SelectItem value="saida">Saída</SelectItem>
+              <SelectItem value="ajuste">Ajuste</SelectItem>
+              <SelectItem value="transferencia">Transferência</SelectItem>
+            </SelectGroup>
+          </SelectContent>
         </Select>
-        
       </div>
       <div v-if="loading" class="text-center py-8 text-muted-foreground">
         A carregar...
@@ -150,6 +158,8 @@ watch(
                         ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 ring-green-600/20'
                         : mov.tipo_movimento === 'saida'
                         ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 ring-red-600/20'
+                        : mov.tipo_movimento === 'transferencia'
+                        ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 ring-blue-600/20'
                         : 'bg-gray-50 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400 ring-gray-600/20',
                     ]"
                   >
@@ -159,6 +169,8 @@ watch(
                           ? ArrowDownCircle
                           : mov.tipo_movimento === 'saida'
                           ? ArrowUpCircle
+                          : mov.tipo_movimento === 'transferencia'
+                          ? RefreshCcw
                           : RefreshCcw
                       "
                       class="w-4 h-4 mr-1"
@@ -182,6 +194,8 @@ watch(
                     :class="
                       mov.tipo_movimento === 'saida'
                         ? 'text-red-600'
+                        : mov.tipo_movimento === 'transferencia'
+                        ? 'text-blue-600'
                         : 'text-green-600'
                     "
                   >

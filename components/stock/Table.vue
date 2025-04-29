@@ -100,6 +100,7 @@ const emit = defineEmits<{
                 variant="ghost"
                 size="icon"
                 title="Transferir"
+                :disabled="!item.ativo || item.quantidade_atual < 1"
               >
                 <MoveRight class="h-4 w-4" />
               </Button>

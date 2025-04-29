@@ -120,7 +120,7 @@ async function save() {
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent class="sm:max-w-lg">
+    <DialogContent class="w-full max-w-full sm:max-w-lg">
       <DialogHeader>
         <DialogTitle>{{ isEdit ? 'Editar E-mail SMTP' : 'Novo E-mail SMTP' }}</DialogTitle>
         <DialogDescription>
@@ -167,7 +167,7 @@ async function save() {
         </div>
       </div>
       <div v-else class="py-8 text-center text-muted-foreground">Carregando...</div>
-      <DialogFooter>
+      <DialogFooter >
         <Button variant="outline" @click="emit('update:open', false)">Cancelar</Button>
         <Button :disabled="loading" @click="save">{{ isEdit ? 'Guardar Alterações' : 'Guardar' }}</Button>
       </DialogFooter>

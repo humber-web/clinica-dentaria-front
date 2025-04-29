@@ -233,32 +233,12 @@ onMounted(fetchUsers);
 </script>
 
 <template>
-  <div class="p-4 md:p-6 space-y-6">
-    <div class="sticky top-0 z-10 bg-background pt-2 pb-4">
-      <div
-        class="flex flex-col md:flex-row md:items-center justify-between gap-4"
-      >
+  <div class="flex flex-col gap-8 p-6 max-w-screen-xl mx-auto w-full">
+    <div class="sticky top-0 z-10 bg-background pt-2 pb-4 border-b">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 class="text-2xl font-bold tracking-tight">Utilizadores</h1>
-
-        <div class="flex items-center gap-2">
-          <div class="relative w-full max-w-sm items-center">
-            <Input
-              id="search"
-              type="text"
-              placeholder="Pesquisar utilizadores"
-              class="pl-10"
-            />
-            <span
-              class="absolute start-0 inset-y-0 flex items-center justify-center px-2"
-            >
-              <Search class="size-6 text-muted-foreground" />
-            </span>
-          </div>
-
-          <Button
-            @click="showCreateDialog = true"
-            class="inline-flex items-center h-9 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium shadow hover:bg-primary/90"
-          >
+        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button @click="showCreateDialog = true" class="w-full sm:w-auto inline-flex items-center h-9 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium shadow hover:bg-primary/90">
             <Plus class="mr-2 h-4 w-4" />
             Novo
           </Button>
@@ -266,67 +246,89 @@ onMounted(fetchUsers);
       </div>
     </div>
 
-    <UsersUserTable
-      :users="paginatedUsers"
-      @edit="openEdit"
-      @toggle-active="toggleActive"
-      @assign-profiles="openAssignProfiles"
-      @assign-clinic="openAssignClinic"
-      @unblock="unblockUser"
-    />
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <Card class="lg:col-span-12 rounded-2xl shadow-md">
+        <CardHeader>
+          <CardTitle>Lista de Utilizadores</CardTitle>
+          <CardDescription>
+            Gerencie todos os utilizadores da plataforma
+          </CardDescription>
+          <div class="relative w-full mt-2">
+            <Input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Pesquisar utilizadores..."
+              class="w-full pl-9"
+            />
+            <Search
+              class="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <UsersUserTable
+            :users="paginatedUsers"
+            @edit="openEdit"
+            @toggle-active="toggleActive"
+            @assign-profiles="openAssignProfiles"
+            @assign-clinic="openAssignClinic"
+            @unblock="unblockUser"
+          />
 
-    <div class="flex items-center justify-between px-2 py-4 border-t">
-      <div class="text-sm text-muted-foreground">
-        Mostrando
-        {{ (currentPage - 1) * pageSize + 1 }}‑{{
-          Math.min(currentPage * pageSize, filteredUsers.length)
-        }}
-        de {{ filteredUsers.length }} utilizadores
-      </div>
+          <div class="flex items-center justify-between mt-4">
+            <div class="text-sm text-muted-foreground">
+              Mostrando
+              {{ (currentPage - 1) * pageSize + 1 }}‑{{
+                Math.min(currentPage * pageSize, filteredUsers.length)
+              }}
+              de {{ filteredUsers.length }} utilizadores
+            </div>
+            <div class="flex flex-wrap items-center space-x-2">
+              <button
+                class="icon-btn"
+                :disabled="currentPage === 1"
+                @click="currentPage = Math.max(1, currentPage - 1)"
+              >
+                <ChevronLeft class="h-4 w-4" />
+              </button>
+              <span class="text-sm font-medium">
+                Página {{ currentPage }} de {{ pageCount }}
+              </span>
+              <button
+                class="icon-btn"
+                :disabled="currentPage === pageCount"
+                @click="currentPage = Math.min(pageCount, currentPage + 1)"
+              >
+                <ChevronRight class="h-4 w-4" />
+              </button>
+              <select
+                v-model.number="pageSize"
+                class="h-8 w-[70px] rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option :value="5">5</option>
+                <option :value="10">10</option>
+                <option :value="20">20</option>
+                <option :value="50">50</option>
+              </select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div class="flex items-center space-x-2">
-        <button
-          class="icon-btn"
-          :disabled="currentPage === 1"
-          @click="currentPage = Math.max(1, currentPage - 1)"
-        >
-          <ChevronLeft class="h-4 w-4" />
-        </button>
-
-        <span class="text-sm font-medium">
-          Página {{ currentPage }} de {{ pageCount }}
-        </span>
-
-        <button
-          class="icon-btn"
-          :disabled="currentPage === pageCount"
-          @click="currentPage = Math.min(pageCount, currentPage + 1)"
-        >
-          <ChevronRight class="h-4 w-4" />
-        </button>
-
-        <select
-          v-model.number="pageSize"
-          class="h-8 w-[70px] rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          <option :value="5">5</option>
-          <option :value="10">10</option>
-          <option :value="20">20</option>
-          <option :value="50">50</option>
-        </select>
-      </div>
+     
     </div>
+
+    <!-- Dialogs remain unchanged -->
     <Dialog v-model:open="showCreateDialog">
-      <DialogContent>
+      <DialogContent class="w-full max-w-full sm:max-w-lg">
         <UsersCreateUserForm
           @created="onUserCreated"
           @cancel="showCreateDialog = false"
         />
       </DialogContent>
     </Dialog>
-
     <Dialog v-model:open="showEditDialog">
-      <DialogContent>
+      <DialogContent class="w-full max-w-full sm:max-w-lg">
         <UsersAccountEditForm
           v-if="selectedUser"
           :user="selectedUser"
@@ -335,9 +337,8 @@ onMounted(fetchUsers);
         />
       </DialogContent>
     </Dialog>
-
     <Dialog v-model:open="showAssignProfilesDialog">
-      <DialogContent>
+      <DialogContent class="w-full max-w-full sm:max-w-lg">
         <UsersAssignProfilesDialog
           v-if="selectedUser"
           :user="selectedUser"
@@ -347,7 +348,7 @@ onMounted(fetchUsers);
       </DialogContent>
     </Dialog>
     <Dialog v-model:open="showAssignClinicDialog">
-      <DialogContent>
+      <DialogContent class="w-full max-w-full sm:max-w-lg">
         <UsersAssignClinicasDialog
           v-if="selectedUser"
           :user="selectedUser"
