@@ -112,11 +112,22 @@ const menuConfigurations: MenuConfigurations = {
         { title: "Equipa", url: "/master/team" },
       ],
     },
-    { title: "Definições", url: "/master/settings", icon: Settings },
+    { 
+      title: "Definições",
+      url: "/master/settings",
+      icon: Settings,
+      children: [
+        { title: "Entidades", url: "/master/settings/entities" },
+        { title: "Categorias", url: "/master/settings/categories" },
+        { title: "Artigos", url: "/master/settings/articles" },
+      ],
+    },
     { title: "Gerir Clínicas", url: "/master/clinics", icon: Building2 },
     { title: "Gerir Utilizadores", url: "/master/users", icon: UserCog },
     { title: "Gerir Stock", url: "/master/stock", icon: ClipboardList },
     { title: "Relatórios", url: "/master/reports", icon: TrendingUp },
+    {title: "Pacientes", url: "/master/patients", icon: Users},
+    
   ],
   doctor: [
     {

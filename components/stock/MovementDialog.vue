@@ -52,7 +52,7 @@ watch(
     }
   },
   { immediate: true }
-)
+);
 
 watch(
   () => props.defaultItemId,
@@ -66,7 +66,7 @@ watch(
 
 watch(
   () => props.open,
-  (val) => (show.value = val),
+  (val) => (show.value = val)
 );
 
 watch(
@@ -243,8 +243,8 @@ async function save() {
               v-model="validade"
             /> -->
             <DatePicker
-              :minValue="parseDate(new Date().toISOString().slice(0, 10))"
               v-model="validade"
+              :minValue="parseDate(new Date().toISOString().slice(0, 10))"
               yearSort="asc"
             />
           </div>
