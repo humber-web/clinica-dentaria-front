@@ -1,29 +1,50 @@
 <script setup lang="ts">
-import {
-  Search,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-vue-next";
+import { Search, Plus, ChevronLeft, ChevronRight } from "lucide-vue-next";
 import { ref, onMounted } from "vue";
 import { useToast } from "@/components/ui/toast";
 import ArticlesTable from "@/components/articles/Table.vue";
 import ArticlesForm from "@/components/articles/Form.vue";
 
 type Artigo = {
-  id: number,
-  codigo: string,
-  descricao: string,
+  id: number;
+  codigo: string;
+  descricao: string;
   categoria: {
-    id: number,
-    nome: string
-  },
-}
+    id: number;
+    nome: string;
+  };
+};
 
 const showCreateDialog = ref(false);
 const showEditDialog = ref(false);
 const editingArtigo = ref<Artigo | null>(null);
 const searchQuery = ref("");
+
+const currentPage = ref(1);
+const pageSize = ref(10);
+
+const filteredArtigos = computed(() => {
+  if (!searchQuery.value) return artigos.value;
+  return artigos.value.filter(
+    (a) =>
+      a.codigo.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      a.descricao.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      a.categoria.nome.toLowerCase().includes(searchQuery.value.toLowerCase())
+  );
+});
+
+const pageCount = computed(() =>
+  Math.ceil(filteredArtigos.value.length / pageSize.value)
+);
+
+const paginatedArtigos = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredArtigos.value.slice(start, start + pageSize.value);
+});
+
+watch(searchQuery, () => {
+  currentPage.value = 1;
+});
 
 const { toast } = useToast();
 const config = useRuntimeConfig();
@@ -76,10 +97,15 @@ onMounted(fetchArtigos);
 <template>
   <div class="flex flex-col gap-8 p-6 max-w-screen-xl mx-auto w-full">
     <div class="sticky top-0 z-10 bg-background pt-2 pb-4 border-b">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div
+        class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+      >
         <h1 class="text-2xl font-bold tracking-tight">Artigos</h1>
         <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Button @click="openCreateDialog" class="w-full sm:w-auto inline-flex items-center h-9 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium shadow hover:bg-primary/90">
+          <Button
+            @click="openCreateDialog"
+            class="w-full sm:w-auto inline-flex items-center h-9 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium shadow hover:bg-primary/90"
+          >
             <Plus class="mr-2 h-4 w-4" />
             Novo
           </Button>
@@ -107,10 +133,43 @@ onMounted(fetchArtigos);
           </div>
         </CardHeader>
         <CardContent>
-          <ArticlesTable
-            :artigos="artigos"
-            @edit="openEditDialog"
-          />
+          <ArticlesTable :artigos="paginatedArtigos" @edit="openEditDialog" />
+          <div class="flex items-center justify-between mt-4">
+            <div class="text-sm text-muted-foreground">
+              Mostrando
+              {{ (currentPage - 1) * pageSize + 1 }}‑
+              {{ Math.min(currentPage * pageSize, filteredArtigos.length) }}
+              de {{ filteredArtigos.length }} artigos
+            </div>
+            <div class="flex flex-wrap items-center space-x-2">
+              <button
+                class="icon-btn"
+                :disabled="currentPage === 1"
+                @click="currentPage = Math.max(1, currentPage - 1)"
+              >
+                <ChevronLeft class="h-4 w-4" />
+              </button>
+              <span class="text-sm font-medium">
+                Página {{ currentPage }} de {{ pageCount }}
+              </span>
+              <button
+                class="icon-btn"
+                :disabled="currentPage === pageCount"
+                @click="currentPage = Math.min(pageCount, currentPage + 1)"
+              >
+                <ChevronRight class="h-4 w-4" />
+              </button>
+              <select
+                v-model.number="pageSize"
+                class="h-8 w-[70px] rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option :value="5">5</option>
+                <option :value="10">10</option>
+                <option :value="20">20</option>
+                <option :value="50">50</option>
+              </select>
+            </div>
+          </div>
 
           <!-- Create Dialog -->
           <Dialog v-model:open="showCreateDialog">
@@ -118,10 +177,7 @@ onMounted(fetchArtigos);
               <DialogHeader>
                 <DialogTitle>Novo Artigo</DialogTitle>
               </DialogHeader>
-              <ArticlesForm
-                @save="handleSave"
-                @cancel="handleCancel"
-              />
+              <ArticlesForm @save="handleSave" @cancel="handleCancel" />
             </DialogContent>
           </Dialog>
           <!-- Edit Dialog -->
@@ -132,7 +188,14 @@ onMounted(fetchArtigos);
               </DialogHeader>
               <ArticlesForm
                 :id="editingArtigo?.id"
-                :artigo="editingArtigo ? { ...editingArtigo, categoria_id: editingArtigo.categoria.id } : null"
+                :artigo="
+                  editingArtigo
+                    ? {
+                        ...editingArtigo,
+                        categoria_id: editingArtigo.categoria.id,
+                      }
+                    : null
+                "
                 @save="handleSave"
                 @cancel="handleCancel"
               />

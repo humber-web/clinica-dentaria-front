@@ -120,6 +120,7 @@ const menuConfigurations: MenuConfigurations = {
         { title: "Entidades", url: "/master/settings/entities" },
         { title: "Categorias", url: "/master/settings/categories" },
         { title: "Artigos", url: "/master/settings/articles" },
+         { title: "Preços", url: "/master/settings/prices" },
       ],
     },
     { title: "Gerir Clínicas", url: "/master/clinics", icon: Building2 },
