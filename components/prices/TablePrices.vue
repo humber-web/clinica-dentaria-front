@@ -1,48 +1,62 @@
 <script setup lang="ts">
 import { Pencil, Plus, ChevronDown } from "lucide-vue-next";
-
-interface Preco {
-  entidade_id: number;
-  valor_entidade: number;
-  valor_paciente: number;
-}
-interface Categoria {
-  id: number;
-  nome: string;
-}
-interface Artigo {
-  id: number;
-  codigo: string;
-  descricao: string;
-  categoria: Categoria;
-  precos: Preco[];
-}
+import type { ArtigoUI, PrecoUI, Entidade } from "@/types/prices";
 
 const props = defineProps<{
-  artigos: Artigo[];
+  artigos: ArtigoUI[];
   expandedRows: number[];
   selectedEntity: string;
+  entidades: Entidade[];
 }>();
 
 const emit = defineEmits<{
   (e: "toggleExpanded", id: number): void;
-  (e: "addPrice", artigo: Artigo): void;
-  (e: "editPrice", artigo: Artigo, preco: Preco): void;
+  (e: "addPrice", artigo: ArtigoUI): void;
+  (e: "editPrice", artigo: ArtigoUI, preco: PrecoUI): void;
 }>();
 
-function hasEntityPrice(artigo: Artigo): boolean {
-  if (props.selectedEntity === "all") return true;
-  const entityId = parseInt(props.selectedEntity);
-  return artigo.precos.some((p) => p.entidade_id === entityId);
+// function hasEntityPrice(artigo: ArtigoUI): boolean {
+//   if (props.selectedEntity === "all") return true;
+//   const entityId = parseInt(props.selectedEntity);
+//   return artigo.precos.some((p) => p.entidade.id === entityId);
+// }
+function hasEntityPrice(artigo: ArtigoUI): boolean {
+  if (props.selectedEntity === "all") return false; // ← passa a “não tem” p/ mostrar botão
+  const id = Number(props.selectedEntity);
+  return artigo.precos.some((p) => p.entidade.id === id);
 }
 
-function formatCurrency(value: number): string {
+function formatCurrency(value: string | number): string {
+  const numValue = typeof value === "string" ? parseFloat(value) : value;
   return new Intl.NumberFormat("pt-PT", {
     style: "currency",
     currency: "CVE",
     minimumFractionDigits: 2,
-  }).format(value);
+  }).format(numValue);
 }
+
+const allEntityIds = computed(() => props.entidades.map((e) => e.id));
+
+function missingEntities(artigo: ArtigoUI): number[] {
+  const pricedIds = artigo.precos.map((p) => p.entidade.id);
+  return allEntityIds.value.filter((id) => !pricedIds.includes(id));
+}
+
+function canAddPriceRowLevel(artigo: ArtigoUI): boolean {
+  if (props.selectedEntity === "all") return missingEntities(artigo).length > 0;
+  return missingEntities(artigo).includes(Number(props.selectedEntity));
+}
+
+function isEntityMissing(artigo: ArtigoUI, entidadeId: number) {
+  return missingEntities(artigo).includes(entidadeId);
+}
+
+watch(
+  () => props.artigos,
+  (newVal) => {
+    console.log("Artigos updated:", newVal);
+  }
+);
 </script>
 
 <template>
@@ -72,7 +86,9 @@ function formatCurrency(value: number): string {
                   <ChevronDown
                     :class="[
                       'h-4 w-4 transition-transform',
-                      props.expandedRows.includes(artigo.id) ? 'rotate-180' : '',
+                      props.expandedRows.includes(artigo.id)
+                        ? 'rotate-180'
+                        : '',
                     ]"
                   />
                 </Button>
@@ -82,9 +98,11 @@ function formatCurrency(value: number): string {
               <TableCell>{{ artigo.categoria.nome }}</TableCell>
               <TableCell>
                 <div class="flex items-center">
-                  <Badge variant="secondary">{{ artigo.precos.length }}</Badge>
+                  <Badge variant="secondary">
+                    {{ artigo.precos.length }}/{{ allEntityIds.length }}
+                  </Badge>
                   <Button
-                    v-if="!hasEntityPrice(artigo)"
+                    v-if="canAddPriceRowLevel(artigo)"
                     variant="outline"
                     size="sm"
                     class="ml-2"
@@ -104,7 +122,9 @@ function formatCurrency(value: number): string {
                   <ChevronDown
                     :class="[
                       'h-4 w-4 transition-transform',
-                      props.expandedRows.includes(artigo.id) ? 'rotate-180' : '',
+                      props.expandedRows.includes(artigo.id)
+                        ? 'rotate-180'
+                        : '',
                     ]"
                   />
                   {{
@@ -131,11 +151,17 @@ function formatCurrency(value: number): string {
                     <TableBody>
                       <TableRow
                         v-for="preco in artigo.precos"
-                        :key="`${artigo.id}-${preco.entidade_id}`"
+                        :key="`${artigo.id}-${preco.entidade.id}`"
                       >
-                        <TableCell>Entidade {{ preco.entidade_id }}</TableCell>
-                        <TableCell>{{ formatCurrency(preco.valor_entidade) }}</TableCell>
-                        <TableCell>{{ formatCurrency(preco.valor_paciente) }}</TableCell>
+                        <TableCell
+                          >Entidade {{ preco.entidade.nome }}</TableCell
+                        >
+                        <TableCell>{{
+                          formatCurrency(preco.valor_entidade)
+                        }}</TableCell>
+                        <TableCell>{{
+                          formatCurrency(preco.valor_paciente)
+                        }}</TableCell>
                         <TableCell class="text-right">
                           <Button
                             variant="ghost"
@@ -155,10 +181,19 @@ function formatCurrency(value: number): string {
                         </TableCell>
                       </TableRow>
                       <TableRow
-                        v-if="props.selectedEntity !== 'all' && !hasEntityPrice(artigo)"
+                        v-if="
+                          props.selectedEntity !== 'all' &&
+                          !hasEntityPrice(artigo)
+                        "
                         class="bg-muted/30"
                       >
-                        <TableCell>Entidade {{ props.selectedEntity }}</TableCell>
+                        <TableCell>
+                          {{
+                            entidades.find(
+                              (e) => e.id === parseInt(props.selectedEntity)
+                            )?.nome || `Entidade ${props.selectedEntity}`
+                          }}
+                        </TableCell>
                         <TableCell colspan="2" class="text-muted-foreground">
                           Preço não definido
                         </TableCell>
