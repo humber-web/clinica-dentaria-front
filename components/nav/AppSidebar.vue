@@ -12,6 +12,7 @@ import {
   Building2,
   ClipboardList,
   BarChart2,
+  Receipt
 } from "lucide-vue-next";
 
 // Tipagem para os itens do menu
@@ -128,6 +129,7 @@ const menuConfigurations: MenuConfigurations = {
     { title: "Gerir Stock", url: "/master/stock", icon: ClipboardList },
     { title: "Relatórios", url: "/master/reports", icon: TrendingUp },
     {title: "Pacientes", url: "/master/patients", icon: Users},
+    {title: "Orcamentos", url: "/master/orcamentos", icon: Receipt},
     
   ],
   doctor: [

@@ -38,6 +38,12 @@ export default defineNuxtConfig({
       alias: {
         '@': resolve(new URL('.', import.meta.url).pathname)
       }
+    },
+    server:{
+      hmr:{
+        protocol:'ws',
+        host:'localhost',
+      }
     }
   },
   runtimeConfig: {
