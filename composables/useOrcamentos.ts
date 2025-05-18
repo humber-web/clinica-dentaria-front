@@ -14,8 +14,6 @@ export function useOrcamentos() {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
-
-
   async function fetchOrcamentos() {
     if (loading.value) return;
 
@@ -139,7 +137,10 @@ export function useOrcamentos() {
     }
   }
 
-  async function addItemToOrcamento(orcamentoId: number, item: AddItemOrcamentoDTO) {
+  async function addItemToOrcamento(
+    orcamentoId: number,
+    item: AddItemOrcamentoDTO
+  ) {
     loading.value = true;
     error.value = null;
 
@@ -150,6 +151,25 @@ export function useOrcamentos() {
       error.value = err instanceof Error ? err.message : String(err);
       console.error(`Erro ao adicionar item ao orçamento ${orcamentoId}:`, err);
       return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function deleteItemFromOrcamento(orcamentoId: number, itemId: number) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      await del(`orcamentos/${orcamentoId}/itens/${itemId}`);
+      return true;
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : String(err);
+      console.error(
+        `Erro ao remover item ${itemId} do orçamento ${orcamentoId}:`,
+        err
+      );
+      return false;
     } finally {
       loading.value = false;
     }
@@ -169,5 +189,6 @@ export function useOrcamentos() {
     deleteOrcamento,
     updateOrcamentoStatus,
     addItemToOrcamento,
+    deleteItemFromOrcamento,
   };
 }

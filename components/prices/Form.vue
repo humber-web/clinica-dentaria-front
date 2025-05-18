@@ -183,7 +183,7 @@ function onCancel() {
 
     <!-- Valor Entidade -->
     <div class="grid grid-cols-4 items-center gap-4">
-      <FormLabel for="valor_entidade" class="text-right">€ Entidade</FormLabel>
+      <FormLabel for="valor_entidade" class="text-right">Entidade</FormLabel>
       <div class="col-span-3">
         <Input
           id="valor_entidade"
@@ -205,7 +205,7 @@ function onCancel() {
 
     <!-- Valor Paciente -->
     <div class="grid grid-cols-4 items-center gap-4">
-      <FormLabel for="valor_paciente" class="text-right">€ Paciente</FormLabel>
+      <FormLabel for="valor_paciente" class="text-right">Paciente</FormLabel>
       <div class="col-span-3">
         <Input
           id="valor_paciente"

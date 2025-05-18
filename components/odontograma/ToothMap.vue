@@ -46,11 +46,13 @@ const selectTooth = (id: number) => {
 };
 </script>
 <template>
-  <div class="w-full max-w-md mx-auto space-y-4">
+  <div class="w-full  mx-auto space-y-4 ">
     <div class="mb-2 font-medium">Selecione um dente:</div>
     
     <!-- Dentes permanentes -->
     <div v-if="showPermanent" class="grid grid-cols-2 gap-4 relative">
+       <!-- Vertical divider line -->
+      <div class="absolute inset-y-0 left-1/2 w-0.5 -ml-[0.5px] bg-border"></div>
       <!-- Quadrante 1 (superior direito) -->
       <div class="flex justify-end gap-1">
         <div 
@@ -118,6 +120,7 @@ const selectTooth = (id: number) => {
     <!-- Dentes decíduos -->
     <div v-if="showDeciduous" class="grid grid-cols-2 gap-4 relative mt-4">
       <!-- Quadrante 5 (superior direito) -->
+       <div class="absolute inset-y-0 left-1/2 w-0.5 -ml-[0.5px] bg-border"></div>
       <div class="flex justify-end gap-1">
         <div 
           v-for="dente in getDentesByQuadrante(5).reverse()" 

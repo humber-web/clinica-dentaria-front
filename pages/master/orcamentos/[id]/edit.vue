@@ -13,7 +13,7 @@ import { useToast } from '@/components/ui/toast';
 import { usePacientes } from '~/composables/usePacientes';
 import { useEntidades } from '~/composables/useEntidades';
 import { useOrcamentos } from '~/composables/useOrcamentos';
-import type { Orcamento, OrcamentoItem, UpdateOrcamentoDTO, AddItemOrcamentoDTO } from '~/types/orcamento';
+import type { Orcamento, OrcamentoItem, UpdateOrcamentoDTO, AddItemOrcamentoDTO,OrcamentoItemRead } from '~/types/orcamento';
 
 const route = useRoute();
 const router = useRouter();
@@ -39,6 +39,7 @@ const {
   updateOrcamentoStatus: apiUpdateStatus ,
   addItemToOrcamento,
   deleteOrcamento,
+  deleteItemFromOrcamento,
   loading: loadingOrcamento,
   error: errorOrcamento
 } = useOrcamentos();
@@ -58,11 +59,11 @@ const {
 } = useEntidades();
 
 // Estado local
-const orcamento = ref<Orcamento | null>(null);
+const orcamento = ref<Orcamento | undefined>(undefined);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const showAddModal = ref(false);
-const itemEmEdicao = ref<OrcamentoItem | null>(null);
+const itemEmEdicao = ref<OrcamentoItemRead | undefined>(undefined);
 const atualizandoEstado = ref(false);
 
 // Campos editáveis do orçamento
@@ -353,7 +354,7 @@ const removerItem = async (itemId: number) => {
   
   try {
     // Implementar chamada API para remover item
-    // await removeOrcamentoItem(orcamento.value.id, itemId);
+    await deleteItemFromOrcamento(orcamento.value.id, itemId);
     
     toast({
       title: "Sucesso",
@@ -374,7 +375,7 @@ const removerItem = async (itemId: number) => {
 
 const fecharModal = () => {
   showAddModal.value = false;
-  itemEmEdicao.value = null;
+  itemEmEdicao.value = undefined;
 };
 
 // Recarregar orçamento quando a rota mudar

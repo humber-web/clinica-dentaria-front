@@ -9,7 +9,7 @@ export interface OrcamentoItemBase {
   
   // Campos odontológicos específicos
   numero_dente?: number; // 11-48, 51-85
-  face?: string; // M,D,V,L,O,I
+  face?: string[]; // M,D,V,L,O,I
   
   preco_entidade: number; // decimal
   preco_paciente: number; // decimal

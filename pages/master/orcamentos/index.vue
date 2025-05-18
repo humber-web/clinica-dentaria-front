@@ -237,7 +237,7 @@ const criarNovoOrcamento = async () => {
   try {
     // Por padrão, criar com o primeiro paciente e entidade
     const pacienteId = pacientes.value[0].id;
-    const entidadeId = entidades.value[0].id;
+    const entidadeId = entidades.value[1].id;
 
     const novoId = await createOrcamento(pacienteId, entidadeId);
     if (novoId) {

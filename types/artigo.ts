@@ -14,6 +14,7 @@ export interface ArtigoBase {
   categoria_id: number;
   requer_dente: boolean;
   requer_face: boolean;
+  face_count: number | null;
 }
 
 // Preço relacionado ao artigo
@@ -41,6 +42,7 @@ export interface Artigo {
   precos: PrecoArtigo[];
   requer_dente: boolean;
   requer_face: boolean;
+  face_count: number | null;
 }
 
 // DTOs para criação e atualização
@@ -52,4 +54,5 @@ export interface ArtigoUpdate {
   categoria_id?: number;
   requer_dente?: boolean;
   requer_face?: boolean;
+  face_count?: number | null;
 }

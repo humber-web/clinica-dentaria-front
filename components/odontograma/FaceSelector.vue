@@ -1,19 +1,21 @@
 <script setup lang="ts">
-
+import { ref, computed, onMounted } from 'vue';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useDentes } from '@/composables/useDentes';
 
-// Updated type
+// Define face ID as string
 type FaceId = string;
 
 const props = defineProps<{
-  modelValue?: FaceId;
+  modelValue?: string[]; // Changed to string array
   denteId?: number;
   multiSelect?: boolean;
   disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: FaceId): void;
+  (e: 'update:modelValue', value: string[]): void; // Changed to emit string array
 }>();
 
 // Use the composable
@@ -32,31 +34,41 @@ const isIncisal = computed(() => {
   return isToothIncisal(props.denteId);
 });
 
-
-
-const selectedFace = computed({
-  get: () => props.modelValue || '',
+// Selected faces as an array
+const selectedFaces = computed({
+  get: () => props.modelValue || [],
   set: (value) => emit('update:modelValue', value)
 });
 
 // Check if a face is selected
-const isSelected = (face: FaceId) => {
-  return selectedFace.value.includes(face);
+const isSelected = (face: FaceId): boolean => {
+  return selectedFaces.value.includes(face);
 };
 
 // Toggle face selection
-const toggleFace = (face: FaceId) => {
+const toggleFace = (face: FaceId): void => {
   if (props.disabled) return;
   
-  if (isSelected(face)) {
-    selectedFace.value = ''; // Unselect if already selected
+  if (props.multiSelect) {
+    // Multi-select mode
+    if (isSelected(face)) {
+      // Remove face if already selected
+      selectedFaces.value = selectedFaces.value.filter(f => f !== face);
+    } else {
+      // Add face to selection
+      selectedFaces.value = [...selectedFaces.value, face];
+    }
   } else {
-    selectedFace.value = face; // Select new face
+    // Single-select mode
+    if (isSelected(face)) {
+      selectedFaces.value = []; // Clear selection
+    } else {
+      selectedFaces.value = [face]; // Select only this face
+    }
   }
 };
-
-
 </script>
+
 <template>
   <div class="w-full max-w-[200px] mx-auto">
     <div class="mb-2 font-medium">Selecione a(s) face(s):</div>
@@ -73,7 +85,7 @@ const toggleFace = (face: FaceId) => {
     
     <!-- Face Selector -->
     <div v-else class="relative w-[150px] h-[150px] mx-auto">
-      <!-- Face Vestibular (V) -->
+      <!-- Face buttons remain unchanged, just using the new functions -->
       <Button
         variant="outline"
         size="sm"
@@ -84,6 +96,9 @@ const toggleFace = (face: FaceId) => {
       >
         V
       </Button>
+      
+      <!-- Other face buttons remain the same -->
+      <!-- ... -->
       
       <!-- Face Mesial (M) -->
       <Button
@@ -134,10 +149,10 @@ const toggleFace = (face: FaceId) => {
       </Button>
     </div>
     
-    <!-- Selected Faces -->
-    <div class="mt-4 flex flex-wrap gap-2">
+    <!-- Selected Faces - Updated to iterate through array -->
+    <div v-if="selectedFaces.length > 0" class="mt-4 flex flex-wrap gap-2">
       <Badge 
-        v-for="face in selectedFace" 
+        v-for="face in selectedFaces" 
         :key="face"
         variant="default"
         class="text-xs"
@@ -147,4 +162,3 @@ const toggleFace = (face: FaceId) => {
     </div>
   </div>
 </template>
-
