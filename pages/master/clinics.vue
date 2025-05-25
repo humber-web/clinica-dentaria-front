@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useToast } from "@/components/ui/toast";
 // import ClinicsEmail from '@/components/clinics/ClinicEmail.vue';
-
+import { useCookie, useRouter, useRuntimeConfig, useState } from "#app";
 import {
   Search,
   Plus,
@@ -10,7 +10,7 @@ import {
   ChevronRight,
   FileText,
 } from "lucide-vue-next";
-import { routerKey } from "vue-router";
+import { computed, onMounted, ref } from "vue";
 
 // Defina o tipo da clínica
 type Clinic = {
@@ -24,7 +24,7 @@ type Clinic = {
 
 const { toast } = useToast();
 const router = useRouter();
-const config = useRuntimeConfig();
+const config = useRuntimeConfig();        
 const baseUrl = config.public.apiBase;
 
 const clinics = ref<Clinic[]>([]);
@@ -104,6 +104,9 @@ function confirmDelete() {
 function redirectToConfig(clinic: Clinic) {
   router.push(`/master/clinic/${clinic.id}/settings`);
 }
+
+
+
 
 </script>
 <template>

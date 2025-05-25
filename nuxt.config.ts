@@ -5,9 +5,9 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   app: {
     head: {
-      title: 'Nuxt 3 + Tailwind CSS + Shadcn UI',
+      title: 'Clinica ProDente',
       meta: [
-        { name: 'description', content: 'Nuxt 3 + Tailwind CSS + Shadcn UI' }
+        { name: 'description', content: 'Clinica ProDente' }
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }

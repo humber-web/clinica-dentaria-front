@@ -8,6 +8,8 @@ import {
 } from "lucide-vue-next";
 import { useToast } from "@/components/ui/toast";
 import { parseDate } from "@internationalized/date";
+import { useCookie, useRouter, useRuntimeConfig, useState } from "nuxt/app";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 
 type Paciente = {
   id: number;

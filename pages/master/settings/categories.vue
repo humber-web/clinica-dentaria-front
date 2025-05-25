@@ -12,21 +12,18 @@ import {
 } from "lucide-vue-next";
 import { ref, onMounted } from "vue";
 import { useToast } from "@/components/ui/toast";
+import type { Categoria } from "@/types/categoria";
+import { useCategorias } from "~/composables/useCategorias";
 
-type Categoria = {
-  id: number;
-  nome: string;
-  slug: string;
-  ordem: number;
-};
 
 const showCreateDialog = ref(false);
 const showEditDialog = ref(false);
 const searchQuery = ref("");
+const loading = ref(false);
 
 const { toast } = useToast();
-const config = useRuntimeConfig();
-const baseUrl = config.public.apiBase;
+
+const { fetchCategorias } = useCategorias();
 
 const currentPage = ref(1);
 const pageSize = ref(10);
@@ -53,14 +50,7 @@ const Categorias = ref<Categoria[]>([]);
 const editingCategoria = ref<Categoria | null>(null);
 
 // Clean mapping: always convert to primitives
-function mapCategoria(e: any): Categoria {
-  return {
-    id: Number(e.id),
-    nome: String(e.nome),
-    slug: String(e.slug),
-    ordem: Number(e.ordem),
-  };
-}
+
 
 function openCreateDialog() {
   editingCategoria.value = null;
@@ -82,30 +72,29 @@ function handleCancel() {
   showEditDialog.value = false;
 }
 
-async function fetchCategorias() {
-  const token = useCookie("token").value;
+async function loadCategorias() {
+  loading.value = true;
   try {
-    const res = await fetch(`${baseUrl}categorias`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    if (!res.ok) throw new Error("Erro ao buscar Categorias");
-    const data = await res.json();
-    Categorias.value = Array.isArray(data) ? data.map(mapCategoria) : [];
+    const data = await fetchCategorias();
+    Categorias.value = Array.isArray(data) ? data : [];
   } catch (e) {
     toast({
       title: "Erro ao buscar Categorias",
       description: e instanceof Error ? e.message : String(e),
+      variant: "destructive",
     });
+  } finally {
+    loading.value = false;
   }
 }
+
 
 watch(searchQuery, () => {
   currentPage.value = 1;
 });
 
-onMounted(fetchCategorias);
+onMounted(loadCategorias);
+
 </script>
 
 <template>

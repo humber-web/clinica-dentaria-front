@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { useToast } from "@/components/ui/toast";
-
+import { useCategorias } from "~/composables/useCategorias";
+import type { Categoria, CategoriaCreate, CategoriaUpdate } from '~/types/categoria';
 const { toast } = useToast();
 
-type CategoriaFormModel = {
-  id?: number;
-  nome: string;
-  slug: string;
-  ordem?: number;
-};
+const { getCategoriaById, createCategoria, updateCategoria } = useCategorias();
+
+type CategoriaFormModel = CategoriaCreate & { id?: number };
 
 const props = defineProps<{
   id?: number;
@@ -23,33 +21,32 @@ const emit = defineEmits<{
 const form = ref<CategoriaFormModel>({
   nome: "",
   slug: "",
-  ordem: undefined,
+  ordem: 0,
 });
+
 
 const loading = ref(false);
 const saving = ref(false);
-const config = useRuntimeConfig();
-const baseUrl = config.public.apiBase;
 
+// Use composable function instead of direct API call
 async function fetchCategoriaById(id: number) {
   loading.value = true;
   try {
-    const token = useCookie("token").value;
-    const res = await fetch(`${baseUrl}categorias/${id}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    });
-    if (!res.ok) throw new Error("Erro ao buscar categoria");
-    const data = await res.json();
-    form.value = {
-      id: data.id,
-      nome: data.nome,
-      slug: data.slug,
-      ordem: data.ordem,
-    };
+    const data = await getCategoriaById(id);
+    if (data) {
+      form.value = {
+        id: data.id,
+        nome: data.nome,
+        slug: data.slug,
+        ordem: data.ordem,
+      };
+    } else {
+      throw new Error("Categoria não encontrada");
+    }
   } catch (e) {
     toast({
       title: "Erro",
-      description: "Erro ao buscar entidade.",
+      description: "Erro ao buscar categoria.",
       variant: "destructive",
     });
   } finally {
@@ -57,44 +54,35 @@ async function fetchCategoriaById(id: number) {
   }
 }
 
+// Use composable functions for saving
 async function onSave() {
   saving.value = true;
-  const token = useCookie("token").value;
 
   const payload = {
     nome: form.value.nome,
     slug: form.value.slug,
-    ordem: form.value.ordem,
+    ordem: form.value.ordem ?? 0,
   };
 
   try {
-    let res;
+    let result;
     if (props.id) {
-      res = await fetch(`${baseUrl}categorias/${props.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
+      // Update existing category
+      result = await updateCategoria(props.id, payload);
     } else {
-      res = await fetch(`${baseUrl}categorias`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
+      // Create new category
+      result = await createCategoria(payload);
     }
-    if (!res.ok) throw new Error("Erro ao salvar categoria");
-    const data = await res.json();
-    toast({
-      title: "Sucesso",
-      description: "Categoria salva com sucesso.",
-    });
-    emit("save", data);
+
+    if (result) {
+      toast({
+        title: "Sucesso",
+        description: "Categoria salva com sucesso.",
+      });
+      emit("save", result);
+    } else {
+      throw new Error("Não foi possível salvar a categoria");
+    }
   } catch (e) {
     toast({
       title: "Erro",
@@ -117,7 +105,7 @@ watch(
       form.value = {
         nome: "",
         slug: "",
-        ordem: undefined,
+        ordem: 0,
       };
     }
   },
@@ -138,6 +126,7 @@ function onCancel() {
     @submit.prevent="onSave"
     class="grid gap-4 py-4"
   >
+    <!-- Form fields remain unchanged -->
     <div class="grid grid-cols-4 items-center gap-4">
       <Label for="nome" class="text-right">Nome</Label>
       <div class="col-span-3">
@@ -174,7 +163,9 @@ function onCancel() {
       <Button variant="outline" type="button" @click="onCancel"
         >Cancelar</Button
       >
-      <Button type="submit" :disabled="saving">Guardar</Button>
+      <Button type="submit" :disabled="saving">
+        {{ saving ? "A guardar..." : "Guardar" }}
+      </Button>
     </DialogFooter>
   </form>
   <div v-else class="py-8 text-center text-muted-foreground">

@@ -130,6 +130,7 @@ const menuConfigurations: MenuConfigurations = {
     { title: "Relatórios", url: "/master/reports", icon: TrendingUp },
     {title: "Pacientes", url: "/master/patients", icon: Users},
     {title: "Orcamentos", url: "/master/orcamentos", icon: Receipt},
+    {title: "Marcações", url: "/master/marcacoes", icon: Receipt},
     
   ],
   doctor: [

@@ -18,6 +18,7 @@ const breadcrumbMap: Record<string, string> = {
   "/master/settings/articles": "Artigos",
   "/master/settings/prices": "Preços",
   "/master/orcamentos": "Orcamentos",
+  "/master/marcacoes": "Marcações",
 
   // add more as needed
 };

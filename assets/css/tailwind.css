@@ -90,3 +90,38 @@
     --radius: 0.5rem;
   }
 }
+
+
+/* Optional base styles for consistency */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* keep your left-border stripes */
+  .vuecal__event { @apply border-l-4; }
+
+  /* stripe colours */
+  .entidade-inpsa { @apply border-l-blue-500; }
+  .entidade-part  { @apply border-l-green-500; }
+  .entidade-ett   { @apply border-l-red-500; }
+
+  /* now drive Vue Cal’s own bg/text via its CSS vars */
+  .vuecal__event.entidade-inpsa {
+    --vuecal-event-color: theme('colors.blue.100');
+    --vuecal-contrast-color: theme('colors.blue.900');
+  }
+  .vuecal__event.entidade-part {
+    --vuecal-event-color: theme('colors.green.100');
+    --vuecal-contrast-color: theme('colors.green.900');
+  }
+  .vuecal__event.entidade-ett {
+    --vuecal-event-color: theme('colors.red.100');
+    --vuecal-contrast-color: theme('colors.red.900');
+  }
+}
