@@ -2,7 +2,6 @@ export interface MarcacaoBase {
   paciente_id:     number;
   medico_id:       number;
   clinic_id:       number;
-  agendada_por:    number;
   entidade_id:     number;
   data_hora_inicio: string;    // ISO datetime
   data_hora_fim:    string;    // ISO datetime

@@ -22,7 +22,7 @@ export function useMarcacoes() {
       allDay: false,
       draggable: false,
       resizable: false,
-      deletable: true,
+      deletable: m.estado === "agendada",
       paciente_id: m.paciente_id,
       medico_id: m.medico_id,
       clinic_id: m.clinic_id,

@@ -6,6 +6,7 @@ import type {
   MarcacaoUpdate,
   MarcacaoRead,
 } from "~/types/marcacao";
+import { Plus } from "lucide-vue-next";
 import { useMarcacoes } from "~/composables/useMarcacao";
 import type { Clinica } from "~/types/clinica";
 import { useToast } from "@/components/ui/toast";
@@ -33,8 +34,10 @@ const loggedUser = useState<UtilizadorResponse | null>("user");
 const calendarRef = ref<InstanceType<typeof VueCal> | null>(null);
 const calendarViews = ["day", "week", "month", "year", "years", "years-range"];
 const toIso = (d: Date) => d.toISOString();
-let clickTimer: ReturnType<typeof setTimeout> | null = null
-const CLICK_DELAY = 250 
+let clickTimer: ReturnType<typeof setTimeout> | null = null;
+let holdingEvent = false;
+const CLICK_DELAY = 250;
+const formPacient = ref(false);
 
 const {
   pacientes,
@@ -104,8 +107,13 @@ function snapToHalfHour(d: Date): Date {
   return date;
 }
 
-function onCellDblClick(payload: any) {
+const defaultEnd = computed(() =>
+  pendingStart.value
+    ? new Date(pendingStart.value.getTime() + 30 * 60000)
+    : null
+);
 
+function onCellDblClick(payload: any) {
   const raw: Date =
     payload instanceof Date ? payload : payload.date ?? payload.start;
 
@@ -113,23 +121,22 @@ function onCellDblClick(payload: any) {
 
   const start = snapToHalfHour(raw);
 
-    const now = new Date();
-    if (start < now) {
-      toast({
-        title: "Erro",
-        description: "Não é possível agendar em data/hora passada",
-        variant: "destructive",
-      });
-      return;
-    }
+  const now = new Date();
+  if (start < now) {
+    toast({
+      title: "Erro",
+      description: "Não é possível agendar em data/hora passada",
+      variant: "destructive",
+    });
+    return;
+  }
 
   const end = new Date(start.getTime() + 30 * 60_000);
 
   if (
     !selectedClinic.value ||
     !selectedMedico.value ||
-    !selectedPaciente.value ||
-    !loggedUser.value?.id
+    !selectedPaciente.value 
   ) {
     toast({
       title: "Selecione clínica/doctor/paciente",
@@ -152,7 +159,6 @@ async function onFormConfirm(payload: { title: string; observacoes: string }) {
     paciente_id: selectedPaciente.value!,
     medico_id: selectedMedico.value!,
     clinic_id: selectedClinic.value!.id,
-    agendada_por: loggedUser.value!.id,
     entidade_id: selectedEntity.value!,
     data_hora_inicio: toIso(start),
     data_hora_fim: toIso(end),
@@ -178,6 +184,7 @@ async function onFormConfirm(payload: { title: string; observacoes: string }) {
 }
 
 function onEventClick(event: VueCalEvent, e: PointerEvent) {
+  if (holdingEvent) return;
   selectedEvent.value = toRaw(event);
   formMode.value = "edit";
   isFormOpen.value = true;
@@ -186,15 +193,100 @@ function onEventClick(event: VueCalEvent, e: PointerEvent) {
 async function onUpdateEvent({
   event,
   observacoes,
+  start,
+  end,
 }: {
   event: VueCalEvent;
   observacoes: string;
+  start?: Date;
+  end?: Date;
 }) {
-  // call your API to update observacoes...
+  if (!event.id) {
+    return toast({ title: "Evento sem ID", variant: "destructive" });
+  }
+  const payload: MarcacaoUpdate = {
+    observacoes,
+    ...(start ? { data_hora_inicio: start.toISOString() } : {}),
+    ...(end ? { data_hora_fim: end.toISOString() } : {}),
+  };
+
+  try {
+    const updated = await updateMarcacao(Number(event.id), payload);
+    if (updated) {
+      toast({ title: "Marcação atualizada com sucesso" });
+      event.observacoes = updated.observacoes;
+      if (start) event.start = start;
+      if (end) event.end = end;
+      fetchMarcacoes(
+        selectedClinic.value?.id ?? undefined,
+        selectedMedico.value ?? undefined
+      );
+      isFormOpen.value = false;
+    } else {
+      throw new Error(error.value || "Sem resposta da API");
+    }
+  } catch (err: any) {
+    toast({
+      title: "Erro ao atualizar",
+      description: err.message,
+      variant: "destructive",
+    });
+  }
 }
 
-function onConsultaStart(event: VueCalEvent) {
-  // your consulta started logic
+async function onConsultaStart(event: VueCalEvent) {
+  if (!event.id) {
+    return toast({ title: "Evento sem ID", variant: "destructive" });
+  }
+
+  try {
+    // actualiza só o estado para 'iniciada'
+    const updated = await updateMarcacao(Number(event.id), {
+      estado: "iniciada",
+    });
+    if (updated) {
+      toast({ title: "Consulta iniciada" });
+      // refresca ou actualiza o evento localmente
+      event.estado = "iniciada";
+      isFormOpen.value = false;
+      fetchMarcacoes(
+        selectedClinic.value?.id,
+        selectedMedico.value ?? undefined
+      );
+    }
+  } catch (err: any) {
+    toast({
+      title: "Erro ao iniciar",
+      description: err.message,
+      variant: "destructive",
+    });
+  }
+}
+
+async function onFailAppointment(event: VueCalEvent) {
+  if (!event.id) {
+    return toast({ title: "Evento sem ID", variant: "destructive" });
+  }
+
+  try {
+    // actualiza só o estado para 'falta'
+    const updated = await updateMarcacao(Number(event.id), { estado: "falta" });
+    if (updated) {
+      toast({ title: "Marcação assinalada como falta" });
+      event.estado = "falta";
+      isFormOpen.value = false;
+      fetchMarcacoes(
+        selectedClinic.value?.id,
+        selectedMedico.value ?? undefined
+      );
+    }
+  } catch (err: any) {
+    toast({
+      title: "Erro ao assinalar falta",
+      description: err.message,
+      variant: "destructive",
+    });
+  }
 }
 
 async function extendEvent(event: VueCalEvent) {
@@ -230,12 +322,36 @@ async function extendEvent(event: VueCalEvent) {
     event.end = newEnd;
     // if you need to force VueCal to re-render, you can:
     // calendarRef.value?.updateEvent(event)
+    isFormOpen.value = false;
   } catch (err: any) {
     toast({
       title: "Falha ao estender",
       description: err.message,
       variant: "destructive",
     });
+  }
+}
+
+// dispara quando o utilizador confirmar a eliminação (double-click no evento)
+// recebe um payload cujo campo `event` é o VueCalEvent
+async function onEventDelete(event: VueCalEvent) {
+  if (!event.id) {
+    return toast({ title: "Evento sem ID", variant: "destructive" });
+  }
+
+  try {
+    const ok = await deleteMarcacao(Number(event.id));
+    if (!ok) throw new Error(error.value || "Erro ao eliminar");
+    // o Vue-Cal já removeu da UI; só mostramos toast
+    toast({ title: "Marcação eliminada" });
+  } catch (err: any) {
+    toast({
+      title: "Erro ao eliminar",
+      description: err.message,
+      variant: "destructive",
+    });
+    // repõe a lista caso falhe
+    fetchMarcacoes(selectedClinic.value?.id, selectedMedico.value ?? undefined);
   }
 }
 
@@ -256,16 +372,28 @@ async function onEventResizeEnd({ event }: { event: VueCalEvent }) {
     // optionally you could refetch events to roll back UI
   }
 }
+async function onSavePaciente() {
+  fetchPacientes(selectedClinic.value?.id ?? undefined);
+  formPacient.value = false;
+  toast({ title: "Paciente salvo com sucesso" });
+  selectedPaciente.value = null;
+  selectedEntity.value = null;
+}
 </script>
 
 <template>
   <div class="calendar-page">
-    <MarcacoesSelectorMarcacoes
-      v-model:selectedPaciente="selectedPaciente"
-      v-model:selectedEntity="selectedEntity"
-      v-model:selectedMedico="selectedMedico"
-    />
     <div class="vuecal__event hidden"></div>
+    <div class="flex items-center justify-between">
+      <MarcacoesSelectorMarcacoes
+        v-model:selectedPaciente="selectedPaciente"
+        v-model:selectedEntity="selectedEntity"
+        v-model:selectedMedico="selectedMedico"
+      />
+      <Button @click="formPacient = true" class="mt-8 mr-2">
+        <Plus class="mr-2 h-4 w-4" /> Novo Paciente
+      </Button>
+    </div>
 
     <ClientOnly>
       <vue-cal
@@ -283,11 +411,12 @@ async function onEventResizeEnd({ event }: { event: VueCalEvent }) {
           create: false,
           drag: false,
           resize: true,
-          delete: false,
+          delete: true,
         }"
         @cell-dblclick="onCellDblClick"
         @event-click="onEventClick"
         @event-resize-end="onEventResizeEnd"
+        @event-delete="onEventDelete"
       >
         <template #event="{ event }">
           <div class="p-2">
@@ -303,11 +432,15 @@ async function onEventResizeEnd({ event }: { event: VueCalEvent }) {
       v-model="isFormOpen"
       :mode="formMode"
       :defaultTitle="pacienteName"
+      :defaultStart="pendingStart"
+      :defaultEnd="defaultEnd"
       :eventData="selectedEvent"
       @confirm="onFormConfirm"
       @update-event="onUpdateEvent"
       @extend-event="extendEvent"
       @consulta-start="onConsultaStart"
+      @fail-appointment="onFailAppointment"
     />
+    <PatientsForm v-model:open="formPacient" @saved="onSavePaciente" />
   </div>
 </template>
