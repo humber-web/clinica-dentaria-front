@@ -90,13 +90,3 @@
     --radius: 0.5rem;
   }
 }
-
-/* Optional base styles for consistency */
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
