@@ -5,10 +5,10 @@ import { useRoute } from "vue-router";
 const route = useRoute();
 
 const breadcrumbMap: Record<string, string> = {
+// Master Section Breadcrumbs
   "/master/clinics": "Gerir Clínicas",
   "/master/users": "Gerir Utilizadores",
   "/master/clinics/settings": "Configurações",
-  // "/master/settings": "Configurações",
   "/master/stock": "Gerir Stock",
   "/master/reports": "Relatórios",
   "/master/patients": "Gerir Pacientes",
@@ -19,6 +19,14 @@ const breadcrumbMap: Record<string, string> = {
   "/master/settings/prices": "Preços",
   "/master/orcamentos": "Orcamentos",
   "/master/marcacoes": "Marcações",
+
+// Doctor Section Breadcrumbs
+  "/doctor": "Início",
+  "/doctor/schedule": "Agenda",
+  "/doctor/patients": "Pacientes",
+  "/doctor/reports": "Relatórios",
+  "/doctor/settings": "Definições",
+
 
   // add more as needed
 };

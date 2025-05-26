@@ -12,7 +12,7 @@ import {
   Building2,
   ClipboardList,
   BarChart2,
-  Receipt
+  Receipt,
 } from "lucide-vue-next";
 
 // Tipagem para os itens do menu
@@ -113,7 +113,7 @@ const menuConfigurations: MenuConfigurations = {
         { title: "Equipa", url: "/master/team" },
       ],
     },
-    { 
+    {
       title: "Definições",
       url: "/master/settings",
       icon: Settings,
@@ -121,28 +121,19 @@ const menuConfigurations: MenuConfigurations = {
         { title: "Entidades", url: "/master/settings/entities" },
         { title: "Categorias", url: "/master/settings/categories" },
         { title: "Artigos", url: "/master/settings/articles" },
-         { title: "Preços", url: "/master/settings/prices" },
+        { title: "Preços", url: "/master/settings/prices" },
       ],
     },
     { title: "Gerir Clínicas", url: "/master/clinics", icon: Building2 },
     { title: "Gerir Utilizadores", url: "/master/users", icon: UserCog },
     { title: "Gerir Stock", url: "/master/stock", icon: ClipboardList },
     { title: "Relatórios", url: "/master/reports", icon: TrendingUp },
-    {title: "Pacientes", url: "/master/patients", icon: Users},
-    {title: "Orcamentos", url: "/master/orcamentos", icon: Receipt},
-    {title: "Marcações", url: "/master/marcacoes", icon: Receipt},
-    
+    { title: "Pacientes", url: "/master/patients", icon: Users },
+    { title: "Orcamentos", url: "/master/orcamentos", icon: Receipt },
+    { title: "Marcações", url: "/master/marcacoes", icon: Receipt },
   ],
   doctor: [
-    {
-      title: "Início",
-      url: "/doctor",
-      icon: Home,
-      children: [
-        { title: "Resumo", url: "/doctor/overview" },
-        { title: "Equipa", url: "/doctor/team" },
-      ],
-    },
+    { title: "Início", url: "/doctor", icon: Home },
     { title: "Agenda", url: "/doctor/schedule", icon: Calendar },
     { title: "Pacientes", url: "/doctor/patients", icon: Users },
     { title: "Relatórios", url: "/doctor/reports", icon: TrendingUp },
@@ -180,8 +171,6 @@ function toggleDropdown(idx: number) {
     openIndexes.value.push(idx);
   }
 }
-
-
 
 const router = useRouter();
 
