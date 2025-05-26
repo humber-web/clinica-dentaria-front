@@ -139,90 +139,99 @@ function onCancel() {
   <form @submit.prevent="onSave" class="space-y-4 py-4">
     <!-- Artigo (Read-only) -->
     <div class="grid grid-cols-4 items-center gap-4">
-      <FormLabel class="text-right">Artigo</FormLabel>
-      <div class="col-span-3">
-        <Card class="bg-muted/30">
-          <CardContent class="p-2">
-            <p>
-              {{ form.artigo?.descricao || artigoDescricao || "Sem descrição" }}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <FormField name="artigo">
+        <FormLabel class="text-right">Artigo</FormLabel>
+        <div class="col-span-3">
+          <Card class="bg-muted/30">
+            <CardContent class="p-2">
+              <p>
+                {{
+                  form.artigo?.descricao || artigoDescricao || "Sem descrição"
+                }}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </FormField>
     </div>
 
     <!-- Entidade (Dropdown) -->
     <div class="grid grid-cols-4 items-center gap-4">
-      <FormLabel class="text-right">Entidade</FormLabel>
-      <div class="col-span-3">
-        <Select
-          v-if="entidades?.length"
-          v-model="form.entidade_id"
-          @update:modelValue="
-            (val) =>
-              emit('update:modelValue', { ...form, entidade_id: Number(val) })
-          "
-        >
-          <SelectTrigger class="w-full">
-            {{ entidadeNome }}
-            <ChevronDown class="ml-2 h-4 w-4 opacity-50" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem
-              v-for="entidade in entidades"
-              :key="entidade.id"
-              :value="entidade.id"
-            >
-              {{ entidade.nome }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-        <Input v-else :value="entidadeNome" disabled class="w-full" />
-      </div>
+      <FormField name="entidade">
+        <FormLabel class="text-right">Entidade</FormLabel>
+        <div class="col-span-3">
+          <Select
+            v-if="entidades?.length"
+            v-model="form.entidade_id"
+            @update:modelValue="
+              (val) =>
+                emit('update:modelValue', { ...form, entidade_id: Number(val) })
+            "
+          >
+            <SelectTrigger class="w-full">
+              {{ entidadeNome }}
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                v-for="entidade in entidades"
+                :key="entidade.id"
+                :value="entidade.id"
+              >
+                {{ entidade.nome }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <Input v-else :value="entidadeNome" disabled class="w-full" />
+        </div>
+      </FormField>
     </div>
 
     <!-- Valor Entidade -->
     <div class="grid grid-cols-4 items-center gap-4">
-      <FormLabel for="valor_entidade" class="text-right">Entidade</FormLabel>
-      <div class="col-span-3">
-        <Input
-          id="valor_entidade"
-          v-model.number="form.valor_entidade"
-          type="number"
-          step="0.01"
-          min="0"
-          :disabled="disabledFields?.includes('valor_entidade')"
-          @input="
-            emit('update:modelValue', {
-              ...form,
-              valor_entidade: Number(form.valor_entidade),
-            })
-          "
-          class="w-full"
-        />
-      </div>
+      <FormField name="valor_entidade">
+        <FormLabel for="valor_entidade" class="text-right">Entidade</FormLabel>
+        <div class="col-span-3">
+          <Input
+            id="valor_entidade"
+            v-model.number="form.valor_entidade"
+            type="number"
+            step="0.01"
+            min="0"
+            :disabled="disabledFields?.includes('valor_entidade')"
+            @input="
+              emit('update:modelValue', {
+                ...form,
+                valor_entidade: Number(form.valor_entidade),
+              })
+            "
+            class="w-full"
+          />
+        </div>
+      </FormField>
     </div>
 
     <!-- Valor Paciente -->
     <div class="grid grid-cols-4 items-center gap-4">
-      <FormLabel for="valor_paciente" class="text-right">Paciente</FormLabel>
-      <div class="col-span-3">
-        <Input
-          id="valor_paciente"
-          v-model.number="form.valor_paciente"
-          type="number"
-          step="0.01"
-          min="0"
-          :disabled="disabledFields?.includes('valor_paciente')"
-          @input="
-            emit('update:modelValue', {
-              ...form,
-              valor_paciente: Number(form.valor_paciente),
-            })
-          "
-          class="w-full"
-        />
-      </div>
+      <FormField name="valor_paciente">
+        <FormLabel for="valor_paciente" class="text-right">Paciente</FormLabel>
+        <div class="col-span-3">
+          <Input
+            id="valor_paciente"
+            v-model.number="form.valor_paciente"
+            type="number"
+            step="0.01"
+            min="0"
+            :disabled="disabledFields?.includes('valor_paciente')"
+            @input="
+              emit('update:modelValue', {
+                ...form,
+                valor_paciente: Number(form.valor_paciente),
+              })
+            "
+            class="w-full"
+          />
+        </div>
+      </FormField>
     </div>
 
     <!-- Botões -->

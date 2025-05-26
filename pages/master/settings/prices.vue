@@ -12,7 +12,7 @@ import type {
   Categoria,
   Entidade,
 } from "@/types/prices";
-import { PricesTablePrices } from "#components";
+import { FormField, PricesTablePrices } from "#components";
 
 /* ─── Estado base ──────────────────────────────────────── */
 const artigos = ref<ArtigoUI[]>([]);
@@ -218,7 +218,7 @@ function handleFormUpdate(val: any) {
 
 async function refreshAfterSave() {
   closePriceModal();
-  await fetchArtigos(); 
+  await fetchArtigos();
 }
 
 onMounted(() => {
@@ -234,43 +234,21 @@ onMounted(() => {
 
     <Form class="bg-card rounded-lg border shadow-sm p-4">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormItem>
-          <FormLabel>Categoria</FormLabel>
-          <Select v-model="selectedCategory">
-            <SelectTrigger as="button" class="w-full justify-between">
-              {{
-                categoryOptions.find((o) => o.value === selectedCategory)?.label
-              }}
-              <ChevronDown class="ml-2 h-4 w-4 opacity-50" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem
-                  v-for="opt in categoryOptions"
-                  :key="opt.value"
-                  :value="opt.value"
-                >
-                  {{ opt.label }}
-                </SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </FormItem>
-
-        <div class="space-y-2">
+        <FormField name="categoria">
           <FormItem>
-            <FormLabel>Entidade</FormLabel>
-            <Select v-model="selectedEntity">
+            <FormLabel>Categoria</FormLabel>
+            <Select v-model="selectedCategory">
               <SelectTrigger as="button" class="w-full justify-between">
                 {{
-                  entityOptions.find((o) => o.value === selectedEntity)?.label
+                  categoryOptions.find((o) => o.value === selectedCategory)
+                    ?.label
                 }}
                 <ChevronDown class="ml-2 h-4 w-4 opacity-50" />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   <SelectItem
-                    v-for="opt in entityOptions"
+                    v-for="opt in categoryOptions"
                     :key="opt.value"
                     :value="opt.value"
                   >
@@ -280,6 +258,33 @@ onMounted(() => {
               </SelectContent>
             </Select>
           </FormItem>
+        </FormField>
+
+        <div class="space-y-2">
+          <FormField name="entidade">
+            <FormItem>
+              <FormLabel>Entidade</FormLabel>
+              <Select v-model="selectedEntity">
+                <SelectTrigger as="button" class="w-full justify-between">
+                  {{
+                    entityOptions.find((o) => o.value === selectedEntity)?.label
+                  }}
+                  <ChevronDown class="ml-2 h-4 w-4 opacity-50" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem
+                      v-for="opt in entityOptions"
+                      :key="opt.value"
+                      :value="opt.value"
+                    >
+                      {{ opt.label }}
+                    </SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </FormItem>
+          </FormField>
         </div>
       </div>
     </Form>
