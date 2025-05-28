@@ -3,10 +3,6 @@
     <!-- Header -->
     <header class="flex justify-between items-center">
       <h1 class="text-3xl font-bold tracking-tight">Dashboard do Médico</h1>
-      <Button variant="outline">
-        <UserIcon class="w-4 h-4 mr-2" />
-        Perfil
-      </Button>
     </header>
 
     <!-- Grid responsivo com cards principais -->
@@ -188,10 +184,12 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router'
 import { useState } from '#app';
 import { useDoctorDashboard } from '~/composables/useDoctorDashboard'
 import type { UtilizadorResponse } from '~/types/utilizador';
 import type { Clinica } from '~/types/clinica';
+import { useConsultas } from '~/composables/useConsultas' 
 import { 
   CalendarIcon, 
   ClockIcon, 
@@ -208,13 +206,15 @@ import {
   ClipboardMinus
 } from 'lucide-vue-next';
 
+
 // Definir meta da página
 definePageMeta({
   title: 'Dashboard do Médico',
   layout: 'default'
 });
 
-
+const router = useRouter()
+const { createConsulta } = useConsultas()
 
 const loggedUser   = useState<UtilizadorResponse|null>('user')
 const selectedClinic = useState<Clinica|null>('selectedClinic')
@@ -245,11 +245,22 @@ function formatDataHora(date: string | Date) {
 
 
 // Funções de ação
-const iniciarConsulta = () => {
-  // Navegar para a página de consulta ou abrir modal
-  console.log('Iniciando consulta...');
-  // Exemplo: await navigateTo('/consulta/nova')
-};
+async function iniciarConsulta() {
+  if (!proximaConsulta.value) return
+
+  // 1) Cria a consulta no backend
+  const nova = await createConsulta({
+    paciente_id:   proximaConsulta.value.paciente.id,
+    clinica_id: selectedClinic.value?.id || 0,
+    entidade_id:   proximaConsulta.value.entidade.id,
+    medico_id:     loggedUser.value!.id,
+    observacoes:   '',
+  })
+
+  if (nova?.id) {
+    navigateTo(`/doctor/consulta/${nova.id}`)
+  }
+}
 
 const verPerfil = () => {
   // Navegar para página de perfil

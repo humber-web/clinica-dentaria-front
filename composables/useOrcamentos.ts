@@ -14,19 +14,27 @@ export function useOrcamentos() {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
-  async function fetchOrcamentos() {
-    if (loading.value) return;
-
-    loading.value = true;
-    error.value = null;
+async function fetchOrcamentos(
+    clinica_id?: number,
+    medico_id?:  number
+  ): Promise<Orcamento[]|null> {
+    loading.value = true
+    error.value   = null
 
     try {
-      orcamentos.value = await get("orcamentos");
-    } catch (err: unknown) {
-      error.value = err instanceof Error ? err.message : String(err);
-      console.error("Erro ao buscar orçamentos:", err);
+      const params = new URLSearchParams()
+      if (clinica_id) params.append('clinica_id', String(clinica_id))
+      if (medico_id)  params.append('medico_id',  String(medico_id))
+      const qs = params.toString() ? `?${params}` : ''
+
+      orcamentos.value = await get(`orcamentos${qs}`)
+      return orcamentos.value
+    } catch (err: any) {
+      error.value = err.message ?? String(err)
+      console.error('Erro ao buscar orçamentos:', err)
+      return null
     } finally {
-      loading.value = false;
+      loading.value = false
     }
   }
 
@@ -43,6 +51,20 @@ export function useOrcamentos() {
       return null;
     } finally {
       loading.value = false;
+    }
+  }
+
+
+  async function fetchOrcamentosByPaciente(pacienteId: number) {
+    loading.value = true
+    error.value = null
+    try {
+      orcamentos.value = await get(`orcamentos?paciente_id=${pacienteId}`)
+    } catch (err: any) {
+      error.value = err.message || String(err)
+      console.error(`Erro ao buscar orçamentos do paciente ${pacienteId}:`, err)
+    } finally {
+      loading.value = false
     }
   }
 
@@ -184,6 +206,7 @@ export function useOrcamentos() {
     // Métodos
     fetchOrcamentos,
     fetchOrcamentoById,
+    fetchOrcamentosByPaciente,
     createOrcamento,
     updateOrcamento,
     deleteOrcamento,
