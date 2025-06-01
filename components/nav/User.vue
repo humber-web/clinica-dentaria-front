@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
+import { ref, watch, onMounted } from "vue";
 
 import {
   SidebarMenu,
@@ -32,27 +32,48 @@ const emit = defineEmits<{
 }>();
 
 const showDialog = ref(false);
-
 const { isMobile } = useSidebar();
-
 const showProfileDialog = ref(false);
 
-const isDark = ref(
-  typeof window !== "undefined"
-    ? document.documentElement.classList.contains("dark")
-    : false
-);
+// Usando ref reativo que será atualizado
+const isDark = ref(false);
+
+// Função para verificar o tema atual
+function checkDarkMode() {
+  isDark.value = document.documentElement.classList.contains("dark");
+}
+
+// Inicializa o estado do tema quando o componente é montado
+onMounted(() => {
+  checkDarkMode();
+});
 
 function toggleDark() {
-  const isDark = document.documentElement.classList.contains("dark");
-  if (isDark) {
+  if (isDark.value) {
     document.documentElement.classList.remove("dark");
     localStorage.setItem("theme", "light");
   } else {
     document.documentElement.classList.add("dark");
     localStorage.setItem("theme", "dark");
   }
+  // Atualiza o estado após a mudança
+  checkDarkMode();
 }
+
+// Observer para detectar mudanças na classe do documento
+onMounted(() => {
+  // Usar MutationObserver para detectar mudanças no tema
+  if (typeof window !== 'undefined') {
+    const observer = new MutationObserver(() => {
+      checkDarkMode();
+    });
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+  }
+});
 </script>
 
 <template>
@@ -98,13 +119,13 @@ function toggleDark() {
           <DropdownMenuGroup>
             <DropdownMenuItem @click="showProfileDialog = true">
               <BadgeCheck />
-              Account
+              Conta
             </DropdownMenuItem>
             <DropdownMenuSeparator />
 
             <DropdownMenuItem>
               <Bell />
-              Notifications
+              Notificações
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
@@ -112,29 +133,29 @@ function toggleDark() {
           <DropdownMenuItem @click="toggleDark">
             <Moon v-if="!isDark" class="mr-2" />
             <Sun v-else class="mr-2" />
-            <span>{{ isDark ? "Light Mode" : "Dark Mode" }}</span>
+            <span>{{ isDark ? "Modo Claro" : "Modo Escuro" }}</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem @click="showDialog = true">
             <LogOut />
-            Log out
+            Terminar Sessão
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <AlertDialog v-model:open="showDialog">
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>Tem a certeza?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action will log you out of your account.
+              Esta ação irá terminar a sua sessão.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel @click="showDialog = false"
-              >Cancel</AlertDialogCancel
+              >Cancelar</AlertDialogCancel
             >
             <AlertDialogAction @click="emit('logout')">
-              Continue
+              Continuar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

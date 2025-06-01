@@ -1,5 +1,8 @@
 <template>
-  <main class="p-8 space-y-8">
+  <div v-if="isLoading" class="flex items-center justify-center h-screen">
+    <div class="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+  </div>
+  <main v-else class="p-8 space-y-8">
     <!-- Header -->
     <header class="flex justify-between items-center">
       <h1 class="text-3xl font-bold tracking-tight">Dashboard do Médico</h1>
@@ -23,10 +26,12 @@
             </div>
             <div class="flex items-center gap-2 text-sm">
               <UserIcon class="w-4 h-4" />
-              <span class="font-medium">{{ proximaConsulta.paciente.nome }}</span>
+              <span class="font-medium">{{
+                proximaConsulta.paciente.nome
+              }}</span>
             </div>
             <div class="flex items-center gap-2 text-sm text-muted-foreground">
-                <ClipboardMinus class="w-4 h-4 " />
+              <ClipboardMinus class="w-4 h-4" />
               <p>{{ proximaConsulta.observacoes }}</p>
             </div>
             <div class="flex items-center gap-2 text-sm text-muted-foreground">
@@ -53,19 +58,25 @@
           <div class="grid grid-cols-3 gap-4">
             <!-- Consultas Hoje -->
             <div class="text-center p-4 bg-muted/50 rounded-lg">
-              <div class="text-2xl font-bold text-primary">{{ estatisticas.consultasHoje }}</div>
+              <div class="text-2xl font-bold text-primary">
+                {{ estatisticas.consultasHoje }}
+              </div>
               <div class="text-sm text-muted-foreground">Consultas Hoje</div>
             </div>
-            
+
             <!-- Pendentes -->
             <div class="text-center p-4 bg-muted/50 rounded-lg">
-              <div class="text-2xl font-bold text-orange-500">{{ estatisticas.pendentes }}</div>
+              <div class="text-2xl font-bold text-orange-500">
+                {{ estatisticas.pendentes }}
+              </div>
               <div class="text-sm text-muted-foreground">Pendentes</div>
             </div>
-            
+
             <!-- Faltas -->
             <div class="text-center p-4 bg-muted/50 rounded-lg">
-              <div class="text-2xl font-bold text-red-500">{{ estatisticas.faltas }}</div>
+              <div class="text-2xl font-bold text-red-500">
+                {{ estatisticas.faltas }}
+              </div>
               <div class="text-sm text-muted-foreground">Faltas</div>
             </div>
           </div>
@@ -85,35 +96,45 @@
           Pacientes
         </TabsTrigger>
       </TabsList>
-      
+
       <TabsContent value="agenda" class="mt-6">
         <Card>
           <CardHeader>
             <CardTitle>Calendário de Consultas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div class="flex items-center justify-center h-64 bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/25">
+            <div
+              class="flex items-center justify-center h-64 bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/25"
+            >
               <div class="text-center space-y-2">
                 <CalendarIcon class="w-12 h-12 mx-auto text-muted-foreground" />
                 <p class="text-muted-foreground">Aqui vai o calendário</p>
-                <p class="text-sm text-muted-foreground">Componente de calendário será implementado</p>
+                <p class="text-sm text-muted-foreground">
+                  Componente de calendário será implementado
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
       </TabsContent>
-      
+
       <TabsContent value="pacientes" class="mt-6">
         <Card>
           <CardHeader>
             <CardTitle>Lista de Pacientes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div class="flex items-center justify-center h-64 bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/25">
+            <div
+              class="flex items-center justify-center h-64 bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/25"
+            >
               <div class="text-center space-y-2">
                 <UsersIcon class="w-12 h-12 mx-auto text-muted-foreground" />
-                <p class="text-muted-foreground">Aqui vai a lista de pacientes</p>
-                <p class="text-sm text-muted-foreground">Tabela de pacientes será implementada</p>
+                <p class="text-muted-foreground">
+                  Aqui vai a lista de pacientes
+                </p>
+                <p class="text-sm text-muted-foreground">
+                  Tabela de pacientes será implementada
+                </p>
               </div>
             </div>
           </CardContent>
@@ -131,7 +152,9 @@
               <p class="text-2xl font-bold">€ 12.450</p>
             </div>
             <div class="p-2 bg-green-100 dark:bg-green-900 rounded-full">
-              <TrendingUpIcon class="w-6 h-6 text-green-600 dark:text-green-400" />
+              <TrendingUpIcon
+                class="w-6 h-6 text-green-600 dark:text-green-400"
+              />
             </div>
           </div>
         </CardContent>
@@ -142,7 +165,9 @@
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm text-muted-foreground">Novos Pacientes</p>
-              <p class="text-2xl font-bold">{{ estatisticas.novosPacientes }}</p>
+              <p class="text-2xl font-bold">
+                {{ estatisticas.novosPacientes }}
+              </p>
             </div>
             <div class="p-2 bg-blue-100 dark:bg-blue-900 rounded-full">
               <UserPlusIcon class="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -170,10 +195,14 @@
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm text-muted-foreground">Orçamentos Pendentes</p>
-              <p class="text-2xl font-bold">{{ estatisticas.orcamentosPendentes }}</p>
+              <p class="text-2xl font-bold">
+                {{ estatisticas.orcamentosPendentes }}
+              </p>
             </div>
             <div class="p-2 bg-purple-100 dark:bg-purple-900 rounded-full">
-              <FileTextIcon class="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              <FileTextIcon
+                class="w-6 h-6 text-purple-600 dark:text-purple-400"
+              />
             </div>
           </div>
         </CardContent>
@@ -183,18 +212,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router'
-import { useState } from '#app';
-import { useDoctorDashboard } from '~/composables/useDoctorDashboard'
-import type { UtilizadorResponse } from '~/types/utilizador';
-import type { Clinica } from '~/types/clinica';
-import { useConsultas } from '~/composables/useConsultas' 
-import { 
-  CalendarIcon, 
-  ClockIcon, 
-  UserIcon, 
-  BuildingIcon, 
+import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
+import { useState } from "#app";
+import { useDoctorDashboard } from "~/composables/useDoctorDashboard";
+import type { UtilizadorResponse } from "~/types/utilizador";
+import type { Clinica } from "~/types/clinica";
+import { useConsultas } from "~/composables/useConsultas";
+import {
+  CalendarIcon,
+  ClockIcon,
+  UserIcon,
+  BuildingIcon,
   PlayIcon,
   BarChartIcon,
   CalendarDaysIcon,
@@ -203,90 +232,107 @@ import {
   UserPlusIcon,
   StarIcon,
   FileTextIcon,
-  ClipboardMinus
-} from 'lucide-vue-next';
-
+  ClipboardMinus,
+} from "lucide-vue-next";
 
 // Definir meta da página
 definePageMeta({
-  title: 'Dashboard do Médico',
-  layout: 'default'
+  title: "Dashboard do Médico",
+  layout: "default",
 });
 
-const router = useRouter()
-const { createConsulta } = useConsultas()
+const router = useRouter();
+const { createConsulta } = useConsultas();
 
-const loggedUser   = useState<UtilizadorResponse|null>('user')
-const selectedClinic = useState<Clinica|null>('selectedClinic')
-const { proximasConsultas, estatisticas, pacientes } =
-  useDoctorDashboard(loggedUser.value, selectedClinic.value)
+const loggedUser = useState<UtilizadorResponse | null>("user");
+const selectedClinic = useState<Clinica | null>("selectedClinic");
+const isLoading = ref(true);
+const { proximasConsultas, estatisticas, pacientes } = computed(() => {
+  if (loggedUser.value && selectedClinic.value) {
+    return useDoctorDashboard(loggedUser.value, selectedClinic.value);
+  }
+  return {
+    proximasConsultas: ref([]),
+    estatisticas: ref({}),
+    pacientes: ref([]),
+  };
+}).value;
+
+watchEffect(() => {
+  if (loggedUser.value) {
+    isLoading.value = false;
+  }
+});
 
 const proximaConsulta = computed(() => {
-  return proximasConsultas.value[0] || {
-    start: '',
-    paciente: '',
-    entidade: '',
-    observacoes: ''
-  }
-})
+  return (
+    proximasConsultas.value[0] || {
+      start: "",
+      paciente: "",
+      entidade: "",
+      observacoes: "",
+    }
+  );
+});
 
 // Função utilitária para formatar data/hora
 function formatDataHora(date: string | Date) {
-  if (!date) return '';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleString('pt-PT', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleString("pt-PT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
-
 // Funções de ação
 async function iniciarConsulta() {
-  if (!proximaConsulta.value) return
+  if (!proximaConsulta.value) return;
 
   // 1) Cria a consulta no backend
   const nova = await createConsulta({
-    paciente_id:   proximaConsulta.value.paciente.id,
+    paciente_id: proximaConsulta.value.paciente.id,
     clinica_id: selectedClinic.value?.id || 0,
-    entidade_id:   proximaConsulta.value.entidade.id,
-    medico_id:     loggedUser.value!.id,
-    observacoes:   '',
-  })
+    entidade_id: proximaConsulta.value.entidade.id,
+    medico_id: loggedUser.value!.id,
+    observacoes: "",
+  });
 
   if (nova?.id) {
-    navigateTo(`/doctor/consulta/${nova.id}`)
+    navigateTo(`/doctor/consulta/${nova.id}`);
   }
 }
 
 const verPerfil = () => {
   // Navegar para página de perfil
-  console.log('Abrindo perfil...');
+  console.log("Abrindo perfil...");
   // Exemplo: await navigateTo('/perfil')
 };
 
 // Função para obter saudação baseada na hora
 const getSaudacao = () => {
   const hora = new Date().getHours();
-  if (hora < 12) return 'Bom dia';
-  if (hora < 18) return 'Boa tarde';
-  return 'Boa noite';
+  if (hora < 12) return "Bom dia";
+  if (hora < 18) return "Boa tarde";
+  return "Boa noite";
 };
 
 // Dados reativos para atualizações em tempo real
-const horaAtual = ref(new Date().toLocaleTimeString('pt-PT', {
-  hour: '2-digit',
-  minute: '2-digit'
-}));
+const horaAtual = ref(
+  new Date().toLocaleTimeString("pt-PT", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+);
 
 // Atualizar hora a cada minuto
 setInterval(() => {
-  horaAtual.value = new Date().toLocaleTimeString('pt-PT', {
-    hour: '2-digit',
-    minute: '2-digit'
+  horaAtual.value = new Date().toLocaleTimeString("pt-PT", {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }, 60000);
 </script>

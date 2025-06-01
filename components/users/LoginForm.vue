@@ -6,7 +6,7 @@ type UserResponse = { perfil: { perfil: string } | null };
 
 const config = useRuntimeConfig();
 const baseUrl = config.public.apiBase;
-const userState = useState<UserResponse | null>('user', () => null);
+const userState = useState<UserResponse | null>("user", () => null);
 
 const email = ref("");
 const password = ref("");
@@ -47,22 +47,10 @@ const onSubmit = async (e: Event) => {
         }
       );
       userState.value = user.value;
-      
-      if (user.value && user.value.perfil && user.value.perfil.perfil) {
-        switch (user.value.perfil.perfil) {
-          case "frontdesk":
-            return navigateTo("/master");
-          case "gerente":
-            return navigateTo("/diretor");
-          case "doctor":
-            return navigateTo("/doctor");
-          case "assistant":
-            return navigateTo("/assistant");
-          case "master_admin":
-            return navigateTo("/master");
-          default:
-            return navigateTo("/");
-        }
+
+      if (token) {
+        useCookie("token").value = token;
+        return navigateTo("/?refresh=true");
       }
     } else {
       error.value = "Login inválido";
