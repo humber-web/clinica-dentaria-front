@@ -34,6 +34,35 @@
           </div>
 
           <div v-else>
+            <div
+              class="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4 p-4"
+            >
+              <Label class="sm:text-right mb-1 sm:mb-0" for="categoria"
+                >Categoria</Label
+              >
+              <div class="col-span-1 sm:col-span-3">
+                <Select
+                  v-model="selectedCategoriaId"
+                  :disabled="loading || disabled"
+                >
+                  <SelectTrigger id="categoria" class="w-full">
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem :value="null">Todas as categorias</SelectItem>
+                    <SelectGroup>
+                      <SelectItem
+                        v-for="categoria in categorias"
+                        :key="categoria.id"
+                        :value="categoria.id"
+                      >
+                        {{ categoria.nome }}
+                      </SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <!-- Artigo (Procedimento) -->
             <div
               class="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4 p-4"
@@ -52,7 +81,7 @@
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem
-                      v-for="artigo in artigos"
+                      v-for="artigo in filteredArtigos"
                       :key="artigo.id"
                       :value="artigo.id"
                     >
@@ -191,6 +220,7 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useArtigos } from "~/composables/useArtigos";
 import { useTabelas } from "~/composables/useTabelas";
+import { useCategorias } from "~/composables/useCategorias"; 
 import { useToast } from "@/components/ui/toast";
 import type {
   ConsultaItemRead,
@@ -223,10 +253,12 @@ const emit = defineEmits<{
 
 // Composables
 const { artigos, fetchArtigos, loading: artigosLoading } = useArtigos();
+const { categorias, fetchCategorias, loading: categoriasLoading } = useCategorias(); 
 const { getPrecoArtigo } = useTabelas();
 const { toast } = useToast();
 
 // Local state
+const selectedCategoriaId = ref<number | null>(null);
 const loading = ref(false);
 const form = ref<{
   artigo_id: number | null;
@@ -244,8 +276,15 @@ const form = ref<{
   observacoes: "",
 });
 
+
+
 // Para o odontograma
 const selectedFaces = ref<string[]>([]);
+
+const filteredArtigos = computed(() => {
+  if (!selectedCategoriaId.value) return artigos.value;
+  return artigos.value.filter(a => a.categoria?.id === selectedCategoriaId.value);
+});
 
 // Computed
 const isFormValid = computed(() => {
@@ -380,11 +419,17 @@ function resetForm() {
 
   // Reset selected faces
   selectedFaces.value = [];
+  selectedCategoriaId.value = null;
 }
 
 function close() {
   emit("close");
 }
+
+watch(selectedCategoriaId, () => {
+  form.value.artigo_id = null;
+});
+
 
 function salvar() {
   if (!isFormValid.value) return;
@@ -397,7 +442,7 @@ function salvar() {
       numero_dente: form.value.numero_dente,
       face: selectedFaces.value.length > 0 ? selectedFaces.value : undefined,
       quantidade: form.value.quantidade,
-      preco_unitario: form.value.preco_paciente, 
+      preco_unitario: form.value.preco_paciente,
       preco_entidade: form.value.preco_entidade,
       preco_paciente: form.value.preco_paciente,
       observacoes: form.value.observacoes,
@@ -417,8 +462,21 @@ function salvar() {
 
 // Load data
 onMounted(async () => {
-  if (!artigos.value.length) {
-    await fetchArtigos();
+  loading.value = true;
+  try {
+    await Promise.all([
+      fetchArtigos(), 
+      fetchCategorias()
+    ]);
+  } catch (error) {
+    console.error("Erro ao carregar dados:", error);
+    toast({
+      title: "Erro",
+      description: "Não foi possível carregar os dados necessários",
+      variant: "destructive",
+    });
+  } finally {
+    loading.value = false;
   }
 });
 </script>

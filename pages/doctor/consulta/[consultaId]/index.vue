@@ -73,7 +73,7 @@
         />
       </TabsContent>
 
-       <TabsContent value="artigos">
+      <TabsContent value="artigos">
         <ConsultasArtigosTab
           :itens="currentConsulta?.itens || []"
           :loading="loading"
@@ -86,12 +86,13 @@
         />
       </TabsContent>
       <!-- Histórico de Consultas do Paciente -->
-      <!-- <TabsContent value="historico">
+      <TabsContent value="historico">
         <ConsultasHistoricoTab
-          :consultas="currentConsulta.paciente.consultas"
+          :consultas="historicoConsultas"
+          :loading="historicoLoading"
           @view="verConsulta"
         />
-      </TabsContent> -->
+      </TabsContent>
     </Tabs>
     <ConsultasAddArtigoModal
       v-if="showAddArtigoModal"
@@ -107,28 +108,44 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useConsultas } from "~/composables/useConsultas";
 import { useOrcamentos } from "~/composables/useOrcamentos";
 import { useEntidades } from "~/composables/useEntidades";
+import { useArtigos } from "~/composables/useArtigos";
 import type { Orcamento } from "~/types/orcamento";
 import type { PacienteListItem } from "~/types/pacientes";
-import type { ConsultaItemRead, ConsultaItemCreate, ConsultaItemUpdate } from "~/types/consulta";
+import type {
+  ConsultaFull,
+  ConsultaItemRead,
+  ConsultaItemCreate,
+  ConsultaItemUpdate,
+} from "~/types/consulta";
 import { useToast } from "~/components/ui/toast";
-import { PlusCircle, FileText, Edit, Check,ClipboardList } from "lucide-vue-next";
+import {
+  PlusCircle,
+  FileText,
+  Edit,
+  Check,
+  ClipboardList,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-vue-next";
 
 const route = useRoute();
 const router = useRouter();
 const { toast } = useToast();
 
-const { 
-  getConsulta, 
-  currentConsulta, 
+const {
+  getConsulta,
+  currentConsulta,
   loading,
   addConsultaItem,
   updateConsultaItem,
-  deleteConsultaItem
+  deleteConsultaItem,
+  getConsultasByPacienteEClinica,
+  updateConsulta,
 } = useConsultas();
 
 const {
@@ -139,38 +156,109 @@ const {
   createOrcamento,
 } = useOrcamentos();
 
-
 const { entidades, fetchEntidades } = useEntidades();
+const { fetchArtigos } = useArtigos();
 const activeTab = ref<"orcamentos" | "artigos" | "historico">("orcamentos");
 const creatingOrcamento = ref(false);
 const showAddArtigoModal = ref(false);
 const itemEmEdicao = ref<ConsultaItemRead | undefined>(undefined);
+const historicoConsultas = ref<ConsultaFull[]>([]);
+const historicoLoading = ref(false);
 
 onMounted(async () => {
   const id = Number(route.params.consultaId);
-  await getConsulta(id);
-  await fetchEntidades();
-});
+  await Promise.all([getConsulta(id), fetchEntidades(), fetchArtigos()]);
 
-watch([activeTab, currentConsulta], ([tab, consulta]) => {
-  console.log(`Tab changed to: ${tab}`, consulta);
-  if (tab === "orcamentos" && consulta && consulta.paciente?.id) {
-    fetchOrcamentosByPaciente(consulta.paciente.id);
+  if (currentConsulta.value?.paciente?.id) {
+    await carregarHistoricoConsultas(currentConsulta.value.paciente.id);
   }
 });
+
+watch(
+  [activeTab, currentConsulta],
+  async ([tab, consulta]) => {
+    console.log("Watch disparado:", { tab, consulta });
+
+    if (!consulta) {
+      console.log("Consulta não definida, ignorando");
+      return;
+    }
+
+    if (tab === "orcamentos" && consulta.paciente?.id) {
+      console.log("Carregando orçamentos para paciente:", consulta.paciente.id);
+      fetchOrcamentosByPaciente(consulta.paciente.id);
+    }
+
+    if (tab === "historico" && consulta.paciente?.id) {
+      console.log("Carregando histórico para paciente:", consulta.paciente.id);
+      await carregarHistoricoConsultas(consulta.paciente.id);
+    }
+  },
+  { immediate: true }
+); // Adicionando immediate: true para executar quando o componente é montado
+
+async function carregarHistoricoConsultas(pacienteId: number) {
+  try {
+    console.log(
+      "Iniciando carregamento do histórico para paciente:",
+      pacienteId
+    );
+    historicoLoading.value = true;
+    const consultaId = Number(route.params.consultaId);
+
+    // Obter o ID da clínica atual
+    const clinicaId = currentConsulta.value?.clinica_id || 0;
+    console.log("Usando clínica ID:", clinicaId);
+
+    // Buscar consultas do paciente, filtrando pela clínica atual se disponível
+    const todasConsultas = await getConsultasByPacienteEClinica(
+      clinicaId,
+      pacienteId
+    );
+    console.log("Consultas carregadas:", todasConsultas.length);
+    console.log("Consultas:", todasConsultas);
+
+    if (!todasConsultas || todasConsultas.length === 0) {
+      console.log("Nenhuma consulta encontrada");
+      historicoConsultas.value = [];
+      return;
+    }
+
+    historicoConsultas.value = todasConsultas
+      .filter((c) => c.id !== consultaId)
+      .sort(
+        (a, b) =>
+          new Date(b.data_inicio).getTime() - new Date(a.data_inicio).getTime()
+      );
+
+    console.log(
+      `Carregadas ${historicoConsultas.value.length} consultas para o histórico`
+    );
+  } catch (error) {
+    console.error("Erro ao carregar histórico:", error);
+    toast({
+      title: "Erro",
+      description: "Não foi possível carregar o histórico de consultas",
+      variant: "destructive",
+    });
+    historicoConsultas.value = [];
+  } finally {
+    historicoLoading.value = false;
+  }
+}
 
 async function adicionarArtigoConsulta(item: ConsultaItemCreate) {
   try {
     const consultaId = Number(route.params.consultaId);
     const result = await addConsultaItem(consultaId, item);
-    
+
     if (result) {
       // Recarregar a consulta para atualizar a lista de itens
       await getConsulta(consultaId);
-      
+
       // Fechar o modal se estiver aberto diretamente
       showAddArtigoModal.value = false;
-      
+
       toast({
         title: "Sucesso",
         description: "Procedimento adicionado com sucesso",
@@ -186,18 +274,21 @@ async function adicionarArtigoConsulta(item: ConsultaItemCreate) {
   }
 }
 
-async function atualizarArtigoConsulta(itemId: number, item: ConsultaItemUpdate) {
+async function atualizarArtigoConsulta(
+  itemId: number,
+  item: ConsultaItemUpdate
+) {
   try {
     const result = await updateConsultaItem(itemId, item);
-    
+
     if (result) {
       // Recarregar a consulta para atualizar a lista de itens
       const consultaId = Number(route.params.consultaId);
       await getConsulta(consultaId);
-      
+
       // Fechar o modal se estiver aberto diretamente
       showAddArtigoModal.value = false;
-      
+
       toast({
         title: "Sucesso",
         description: "Procedimento atualizado com sucesso",
@@ -216,12 +307,12 @@ async function atualizarArtigoConsulta(itemId: number, item: ConsultaItemUpdate)
 async function removerArtigoConsulta(itemId: number) {
   try {
     const result = await deleteConsultaItem(itemId);
-    
+
     if (result) {
       // Recarregar a consulta para atualizar a lista de itens
       const consultaId = Number(route.params.consultaId);
       await getConsulta(consultaId);
-      
+
       toast({
         title: "Sucesso",
         description: "Procedimento removido com sucesso",
@@ -248,15 +339,58 @@ function fecharModalArtigo() {
   itemEmEdicao.value = undefined;
 }
 
-
 function editarConsulta() {
   // lógica de editar
 }
-
 async function finalizarConsulta() {
-  // lógica de concluir consulta
-}
+  try {
+    if (currentConsulta.value?.estado === "concluida") {
+      toast({
+        title: "Aviso",
+        description: "Esta consulta já está concluída",
+        variant: "default",
+      });
+      return;
+    }
 
+    // Mostrar feedback de carregamento
+    toast({
+      title: "Processando",
+      description: "Concluindo consulta...",
+    });
+
+    const consultaId = Number(route.params.consultaId);
+
+    // Preparar os dados a serem atualizados
+    const dadosAtualizacao = {
+      estado: "concluida",
+      data_fim: new Date().toISOString(), // Define a data atual como data de fim
+    };
+
+    // Chamar a função de atualização da consulta
+    const resultado = await updateConsulta(consultaId, dadosAtualizacao);
+
+    if (resultado) {
+      // Recarregar a consulta para atualizar os dados
+      await getConsulta(consultaId);
+
+      // Mostrar feedback de sucesso
+      toast({
+        title: "Sucesso",
+        description: "Consulta concluída com sucesso",
+      });
+    }
+  } catch (error) {
+    console.error("Erro ao concluir consulta:", error);
+
+    // Mostrar feedback de erro
+    toast({
+      title: "Erro",
+      description: "Ocorreu um erro ao concluir a consulta",
+      variant: "destructive",
+    });
+  }
+}
 
 function abrirEditarOrcamento(orcamento: Orcamento) {
   const consultaId = Number(route.params.consultaId);
@@ -327,38 +461,47 @@ async function atualizarStatusOrcamento(
       title: "Processando",
       description: `Atualizando status do orçamento...`,
     });
-    
+
     // Chamar o composable para atualizar o status
     await updateOrcamentoStatus(orcamentoId, novoEstado);
-    
+
     // Atualizar a lista de orçamentos
     if (currentConsulta.value?.paciente?.id) {
       await fetchOrcamentosByPaciente(currentConsulta.value.paciente.id);
     }
-    
+
     // Mostrar feedback de sucesso
     toast({
       title: "Sucesso",
-      description: `Orçamento ${novoEstado === 'aprovado' ? 'aprovado' : 'rejeitado'} com sucesso`,
+      description: `Orçamento ${
+        novoEstado === "aprovado" ? "aprovado" : "rejeitado"
+      } com sucesso`,
     });
   } catch (error) {
-    console.error(`Erro ao ${novoEstado === 'aprovado' ? 'aprovar' : 'rejeitar'} orçamento:`, error);
-    
+    console.error(
+      `Erro ao ${
+        novoEstado === "aprovado" ? "aprovar" : "rejeitar"
+      } orçamento:`,
+      error
+    );
+
     // Mostrar feedback de erro
     toast({
       title: "Erro",
-      description: `Ocorreu um erro ao ${novoEstado === 'aprovado' ? 'aprovar' : 'rejeitar'} o orçamento`,
+      description: `Ocorreu um erro ao ${
+        novoEstado === "aprovado" ? "aprovar" : "rejeitar"
+      } o orçamento`,
       variant: "destructive",
     });
   }
 }
 
 function aprovarOrcamento(id: number) {
-    atualizarStatusOrcamento(id, "aprovado");
+  atualizarStatusOrcamento(id, "aprovado");
 }
 
 function rejeitarOrcamento(id: number) {
-    atualizarStatusOrcamento(id, "rejeitado");
+  atualizarStatusOrcamento(id, "rejeitado");
 }
 
 function abrirAdicionarItem() {
@@ -366,7 +509,13 @@ function abrirAdicionarItem() {
 }
 
 function verConsulta(id: number) {
-  // Fix: Use the correct route name based on your structure
+  // Se for a consulta atual, apenas muda a aba para artigos
+  if (id === Number(route.params.consultaId)) {
+    activeTab.value = "artigos";
+    return;
+  }
+
+  // Se for outra consulta, navega para ela
   router.push(`/doctor/consulta/${id}`);
 }
 </script>

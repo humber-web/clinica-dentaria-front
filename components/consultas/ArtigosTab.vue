@@ -59,7 +59,7 @@
           <TableCell>{{ item.face?.join(", ") || "—" }}</TableCell>
           <TableCell class="text-right">{{ item.quantidade }}</TableCell>
           <TableCell class="text-right">{{
-            formatCurrency(item.preco)
+            formatCurrency(item.preco_unitario)
           }}</TableCell>
           <TableCell class="text-right">{{
             formatCurrency(item.total)
@@ -155,11 +155,11 @@ const total = computed(() => {
 
 // Helper functions
 function formatCurrency(value?: number | string) {
-  if (value === undefined || value === null) return "€0,00";
+  if (value === undefined || value === null) return "CVE 0,00";
   const num = typeof value === "string" ? parseFloat(value) : value;
-  return new Intl.NumberFormat("pt-PT", {
+  return new Intl.NumberFormat("cv-CV", {
     style: "currency",
-    currency: "EUR",
+    currency: "CVE",
   }).format(num);
 }
 
@@ -193,8 +193,6 @@ async function atualizarArtigoComComponente(
 }
 
 async function removerArtigo(id: number) {
-  if (confirm("Tem certeza que deseja remover este procedimento?")) {
     emit("delete-item", id);
-  }
 }
 </script>
