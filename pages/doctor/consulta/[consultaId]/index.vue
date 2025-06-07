@@ -3,9 +3,6 @@
     <!-- Header da Consulta -->
     <ConsultasHeader :consulta="currentConsulta!" :is-loading="loading">
       <template #actions>
-        <Button @click="editarConsulta">
-          <Edit class="mr-2 h-4 w-4" /> Editar
-        </Button>
         <Button @click="finalizarConsulta">
           <Check class="mr-2 h-4 w-4" /> Concluir
         </Button>

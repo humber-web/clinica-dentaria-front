@@ -1,152 +1,52 @@
 <script setup lang="ts">
-import { ref } from "vue";
 import { Edit, ClipboardList, Plus } from "lucide-vue-next";
+import { useRoute, useRouter } from "vue-router";
+import { usePacientes } from "~/composables/usePacientes";
+import { useToast } from "~/components/ui/toast";
+import type {
+  Paciente,
+  Consulta as ConsultaType,
+  PlanoTratamento,
+} from "~/types/pacientes";
+import { formatPaciente } from "~/types/pacientes";
 
-// Define Paciente type if not imported from elsewhere
-type Consulta = {
-  data: string;
-  hora: string;
-  doutor: string;
-  sala: string;
-  estado: string;
-  tipo: string;
-  observacoes: string;
-};
+const route = useRoute();
+const router = useRouter();
+const { toast } = useToast();
 
-type Plano = {
-  id: string;
-  titulo: string;
-  dataCriacao: string;
-  estado: string;
-  progresso: number;
-  descricao?: string;
-};
+const { fetchPacienteById, loading: isLoading, error } = usePacientes();
+const rawPaciente = ref<Paciente | null>(null);
 
-type Anotacao = {
-  autor: string;
-  data: string;
-  texto: string;
-  anexos?: { nome: string; url: string }[];
-};
-
-type Paciente = {
-  id: string;
-  nome: string;
-  idade: number;
-  sexo: "M" | "F" | "Outro";
-  nif: string;
-  temFichaClinica: boolean;
-  dataNascimento: string;
-  telefone: string;
-  endereco: string;
-  email: string;
-  consultas: Consulta[];
-  planos: Plano[];
-  anotacoes: Anotacao[];
-};
-
-const paciente = ref<Paciente>({
-  id: "123",
-  nome: "Maria Andrade",
-  idade: 34,
-  sexo: "F",
-  nif: "123456789",
-  temFichaClinica: true,
-  dataNascimento: "1990-01-01",
-  telefone: "912345678",
-  endereco: "Rua das Flores, 123, São Filipe",
-  email: "maria@example.com",
-
-  // Histórico de consultas
-  consultas: [
-    {
-      data: "2025-04-15",
-      hora: "10:00",
-      doutor: "João Silva",
-      sala: "Sala 101",
-      estado: "Concluída",
-      tipo: "Consulta Regular",
-      observacoes: "Paciente chegou no horário."
-    },
-    {
-      data: "2025-03-20",
-      hora: "15:30",
-      doutor: "Maria Oliveira",
-      sala: "Sala 102",
-      estado: "Concluída",
-      tipo: "Primeira Consulta",
-      observacoes: "Avaliação inicial."
-    },
-    {
-      data: "2025-05-10",
-      hora: "14:30",
-      doutor: "João Silva",
-      sala: "Sala 101",
-      estado: "Agendada",
-      tipo: "Retorno",
-      observacoes: "Verificar evolução do tratamento."
-    }
-  ],
-
-  // Planos de tratamento
-  planos: [
-    {
-      id: "1",
-      titulo: "Tratamento Ortodôntico",
-      dataCriacao: "2025-03-20",
-      estado: "Em andamento",
-      progresso: 35,
-      descricao: "Plano de tratamento ortodôntico com duração estimada de 18 meses."
-    },
-    {
-      id: "2",
-      titulo: "Tratamento de Canal",
-      dataCriacao: "2025-02-10",
-      estado: "Concluído",
-      progresso: 100,
-      descricao: "Tratamento de canal no dente 26."
-    }
-  ],
-
-  // Anotações da ficha clínica
-  anotacoes: [
-    {
-      autor: "Dr. João Silva",
-      data: "2025-04-15",
-      texto:
-        "Paciente apresentou melhora significativa após o tratamento. Recomendado continuar com os medicamentos prescritos por mais 7 dias.",
-      anexos: [
-        { nome: "raio-x.pdf", url: "#" },
-        { nome: "prescricao.pdf", url: "#" }
-      ]
-    },
-    {
-      autor: "Dra. Maria Oliveira",
-      data: "2025-03-20",
-      texto:
-        "Primeira consulta. Paciente relata dor na região molar direita há 3 dias. Iniciado tratamento com antibióticos e analgésicos."
-    }
-  ]
+const paciente = computed(() => {
+  if (!rawPaciente.value) return null;
+  return formatPaciente(rawPaciente.value);
 });
 
+const patientId = computed(() => {
+  const id = route.params.id;
+  return typeof id === "string" ? parseInt(id) : 0;
+});
 
-// loading state & mock patient
-const isLoading = ref(false);
+const activeTab = ref<
+  | "resumo"
+  | "ficha-clinica"
+  | "consultas"
+  | "planos"
+  | "ficheiros"
+  | "orcamentos"
+  | "pagamentos"
+>("resumo");
 
-
-const activeTab = ref<"resumo" | "ficha-clinica" | "consultas" | "planos">(
-  "resumo"
-);
-
-// action handlers (stubbed for now)
-function openEditarPaciente() {
-  console.log("Editar Paciente clicked");
-}
 function openFichaClinica() {
-  console.log("Ficha Clínica clicked");
+  console.log("Abrir ficha clínica");
 }
 function openAgendarConsulta() {
-  console.log("Agendar Consulta clicked");
+  if (paciente.value?.id) {
+    router.push({
+      path: "/master/appointments/new",
+      query: { paciente_id: paciente.value.id.toString() },
+    });
+  }
 }
 
 function openAdicionarAnotacao() {
@@ -157,76 +57,130 @@ function openAnexarFicheiro() {
   console.log("Abrir attach ficheiro");
 }
 
-function viewConsulta(consulta: any) {
-  console.log("Visualizar consulta:", consulta);
+function viewConsulta(consulta: ConsultaType) {
+  // router.push(`/master/appointment/${consulta.id}`);
+  toast({
+    title: "Em desenvolvimento",
+    description: "A funcionalidade de visualizar consulta ainda não está implementada.",
+  });
 }
 
-function viewPlano(plano: any) {
-  console.log("Visualizar plano:", plano);
+function viewPlano(plano: PlanoTratamento) {
+  // router.push(`/master/patient/${patientId.value}/plano/${plano.id}`);
+  toast({
+    title: "Em desenvolvimento",
+    description: "A funcionalidade de visualizar plano ainda não está implementada.",
+  });
 }
 
-function editPlano(plano: any) {
-  console.log("Editar plano:", plano);
+function editPlano(plano: PlanoTratamento) {
+  // router.push(`/master/patient/${patientId.value}/plano/${plano.id}/edit`);
+  toast({
+    title: "Em desenvolvimento",
+    description: "A funcionalidade de editar plano ainda não está implementada.",
+  });
 }
 
 function newPlano() {
-  console.log("Novo plano de tratamento");
+  // router.push(`/master/patient/${patientId.value}/plano/new`);
+  toast({
+    title: "Em desenvolvimento",
+    description: "A funcionalidade de criar novo plano ainda não está implementada.",
+  });
 }
+
+onMounted(async () => {
+  if (patientId.value) {
+    const result = await fetchPacienteById(patientId.value);
+    if (result) {
+      // Use the formatPaciente helper to add derived properties
+      rawPaciente.value = result;
+    } else {
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os dados do paciente",
+        variant: "destructive",
+      });
+      // Optionally redirect back to patients list
+      router.push("/master/patients");
+    }
+  }
+});
 </script>
 
 <template>
   <div class="p-4 md:p-6 space-y-6">
-    <PatientsHeader :paciente="paciente" :isLoading="isLoading">
-      <template #actions>
-        <Button @click="openEditarPaciente">
-          <Edit class="mr-2 h-4 w-4" /> Editar Paciente
-        </Button>
-        <Button @click="openFichaClinica">
-          <ClipboardList class="mr-2 h-4 w-4" />
-          {{ paciente.temFichaClinica ? "Editar Ficha" : "Nova Ficha Clínica" }}
-        </Button>
-        <Button @click="openAgendarConsulta">
-          <Plus class="mr-2 h-4 w-4" /> Agendar Consulta
-        </Button>
-      </template>
-    </PatientsHeader>
+    <!-- Loading skeleton -->
+    <div v-if="isLoading" class="space-y-4">
+      <div class="h-10 w-3/4 bg-muted animate-pulse rounded"></div>
+      <div class="h-24 bg-muted animate-pulse rounded"></div>
+    </div>
 
-    <PatientsTabs v-model:active="activeTab" />
+    <!-- Error state -->
+    <div v-else-if="!paciente" class="text-center py-8">
+      <Alert variant="destructive">
+        <AlertTitle>Erro ao carregar paciente</AlertTitle>
+        <AlertDescription>
+          {{
+            error ||
+            "Não foi possível carregar os dados do paciente. Tente novamente mais tarde."
+          }}
+        </AlertDescription>
+      </Alert>
+      <Button class="mt-4" @click="router.push('/master/patients')">
+        Voltar para lista
+      </Button>
+    </div>
 
-    <PatientsResumoTab
-      v-if="activeTab === 'resumo'"
-      :isLoading="isLoading"
-      :paciente="{
-        ...paciente,
-        dataNascimento: paciente.dataNascimento ?? '',
-      }"
-    />
+    <!-- Content when data is loaded -->
+    <template v-else>
+      <PatientsHeader :paciente="paciente" :isLoading="isLoading">
+        <template #actions>
+          <Button @click="openFichaClinica">
+            <ClipboardList class="mr-2 h-4 w-4" />
+            {{
+              paciente.temFichaClinica ? "Editar Ficha" : "Nova Ficha Clínica"
+            }}
+          </Button>
+          <Button @click="openAgendarConsulta">
+            <Plus class="mr-2 h-4 w-4" /> Agendar Consulta
+          </Button>
+        </template>
+      </PatientsHeader>
 
-    <PatientsFichaTab
-      v-if="activeTab === 'ficha-clinica'"
-      :isLoading="isLoading"
-      :paciente="paciente"
-      @add-note="openAdicionarAnotacao"
-      @attach-file="openAnexarFicheiro"
-    />
+      <PatientsTabs v-model:active="activeTab" />
 
-    <PatientsConsultasTab
-      v-if="activeTab === 'consultas'"
-      :isLoading="isLoading"
-      :consultas="paciente.consultas"
-      @schedule="openAgendarConsulta"
-      @view="viewConsulta"
-    />
+      <PatientsResumoTab
+        v-if="activeTab === 'resumo'"
+        :isLoading="isLoading"
+        :paciente="paciente"
+      />
 
-    <PatientsPlanosTab
-      v-if="activeTab === 'planos'"
-      :isLoading="isLoading"
-      :planos="paciente.planos"
-      @new="newPlano"
-      @view="viewPlano"
-      @edit="editPlano"
-    />
+      <PatientsFichaTab
+        v-if="activeTab === 'ficha-clinica'"
+        :isLoading="isLoading"
+        :paciente="paciente"
+        @add-note="openAdicionarAnotacao"
+        @attach-file="openAnexarFicheiro"
+      />
 
-    <!-- rest of your tabs & content goes here… -->
+      <PatientsConsultasTab
+        v-if="activeTab === 'consultas'"
+        :isLoading="isLoading"
+        :paciente="paciente"
+        :consultas="paciente.consultas || []"
+        @schedule="openAgendarConsulta"
+        @view="viewConsulta"
+      />
+
+      <PatientsPlanosTab
+        v-if="activeTab === 'planos'"
+        :isLoading="isLoading"
+        :planos="paciente.planos || []"
+        @new="newPlano"
+        @view="viewPlano"
+        @edit="editPlano"
+      />
+    </template>
   </div>
 </template>

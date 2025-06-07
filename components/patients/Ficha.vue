@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useToast } from "@/components/ui/toast"
-
+import { ref, reactive, watch } from 'vue'
 import { ClipboardList, RefreshCw, Save } from "lucide-vue-next"
 import { useCookie, useRuntimeConfig } from "#imports"
 
@@ -10,11 +10,11 @@ const { toast } = useToast()
 const props = defineProps<{
   id?: number
   ficha?: any | null
+  paciente?: any
+  template?: any[]
 }>()
-const emit = defineEmits<{
-  (e: "save", ficha: any): void
-  (e: "cancel"): void
-}>()
+
+
 
 // Reactive form state
 const form = reactive({
@@ -58,9 +58,8 @@ const form = reactive({
   sangramento_gengival:           { sim: false, detalhes: "" },
   higiene_bucal:                  { sim: false, detalhes: "" },
 
-  // — Exame Clínico & Plano —
+  // — Exame Clínico —
   exame_clinico: "",
-  plano_geral: { mapa_dentario: "", notas: "" },
 
   // — Observações Finais —
   observacoes_finais: ""
@@ -97,6 +96,63 @@ function resetForm() {
   toast({ title: "Formulário limpo", description: "Todos os campos foram resetados" })
 }
 
+// Function to safely merge ficha data
+function mergeWithSafety(data: any) {
+  if (!data) return;
+  
+  // Set basic fields
+  if (data.nome_paciente) form.nome_paciente = data.nome_paciente;
+  if (data.data_nascimento) form.data_nascimento = data.data_nascimento;
+  if (data.sexo) form.sexo = data.sexo;
+  if (data.estado_civil) form.estado_civil = data.estado_civil;
+  if (data.profissao) form.profissao = data.profissao;
+  if (data.telefone_residencial) form.telefone_residencial = data.telefone_residencial;
+  if (data.local_trabalho) form.local_trabalho = data.local_trabalho;
+  if (data.telefone_trabalho) form.telefone_trabalho = data.telefone_trabalho;
+  if (data.tipo_beneficiario) form.tipo_beneficiario = data.tipo_beneficiario;
+  if (data.numero_beneficiario) form.numero_beneficiario = data.numero_beneficiario;
+  if (data.recomendado_por) form.recomendado_por = data.recomendado_por;
+  if (data.data_questionario) form.data_questionario = data.data_questionario;
+  if (data.endereco) form.endereco = data.endereco;
+  if (data.queixa_principal) form.queixa_principal = data.queixa_principal;
+  if (data.exame_clinico) form.exame_clinico = data.exame_clinico;
+  if (data.observacoes_finais) form.observacoes_finais = data.observacoes_finais;
+  
+  // Handle historia_medica fields
+  if (data.tratamento_medico) form.tratamento_medico = data.tratamento_medico;
+  if (data.medicamento) form.medicamento = data.medicamento;
+  if (data.alergias) form.alergias = data.alergias;
+  if (data.condicoes_sistemicas) form.condicoes_sistemicas = data.condicoes_sistemicas;
+  if (data.historico_familiar) form.historico_familiar = data.historico_familiar;
+  if (data.sintomas_gerais) form.sintomas_gerais = data.sintomas_gerais;
+  if (data.exames_dst) form.exames_dst = data.exames_dst;
+  if (data.historico_cirurgico) form.historico_cirurgico = data.historico_cirurgico;
+  if (data.febre_reumatica) form.febre_reumatica = data.febre_reumatica;
+  if (data.fumante) form.fumante = data.fumante;
+  if (data.alcool) form.alcool = data.alcool;
+  if (data.desmaios) form.desmaios = data.desmaios;
+  if (data.hemorragia) form.hemorragia = data.hemorragia;
+  
+  // Handle condicao_mulher object
+  if (data.condicao_mulher) {
+    form.condicao_mulher = {
+      gravida: data.condicao_mulher.gravida || false,
+      menopausa: data.condicao_mulher.menopausa || false,
+      anticoncepcionais: data.condicao_mulher.anticoncepcionais || false
+    };
+  }
+  
+  // Handle historico odontologico
+  if (data.tratamento_odontologico_previo) form.tratamento_odontologico_previo = data.tratamento_odontologico_previo;
+  if (data.sangramento_gengival) form.sangramento_gengival = data.sangramento_gengival;
+  if (data.higiene_bucal) form.higiene_bucal = data.higiene_bucal;
+  
+  // Calculate age if data_nascimento is set
+  if (data.data_nascimento) {
+    form.idade = calcAge(data.data_nascimento);
+  }
+}
+
 // Save (POST or PUT)
 async function saveForm() {
   // basic validation
@@ -113,8 +169,8 @@ async function saveForm() {
   try {
     const token = useCookie("token").value
     const url = props.id
-      ? `${apiBase}pacientes/fichas/${props.id}`
-      : `${apiBase}pacientes/fichas`
+      ? `${apiBase}pacientes/ficha/${props.id}`
+      : `${apiBase}pacientes/ficha`
     const method = props.id ? "PUT" : "POST"
 
     const res = await fetch(url, {
@@ -129,9 +185,9 @@ async function saveForm() {
 
     const data = await res.json()
     toast({ title: "Sucesso", description: "Ficha clínica salva com sucesso" })
-    emit("save", data)
   } catch (e) {
     toast({ title: "Erro", description: "Não foi possível salvar a ficha", variant: "destructive" })
+    console.error("Error saving form:", e)
   } finally {
     saving.value = false
   }
@@ -147,29 +203,54 @@ async function loadFicha(id: number) {
     })
     if (!res.ok) throw new Error("Não encontrado")
     const data = await res.json()
-    Object.assign(form, data)
-  } catch {
+    mergeWithSafety(data) // Use the safe merge function
+  } catch (error) {
     toast({ title: "Erro", description: "Não foi possível carregar a ficha", variant: "destructive" })
+    console.error("Error loading ficha:", error)
   } finally {
     loading.value = false
   }
 }
 
-if (props.id) loadFicha(props.id)
+// If ficha is provided as a prop, use it
+watch(() => props.ficha, (newFicha) => {
+  if (newFicha) {
+    mergeWithSafety(newFicha)
+  }
+}, { immediate: true })
+
+// If paciente data is available, pre-fill some fields
+watch(() => props.paciente, (newPaciente) => {
+  if (newPaciente && !form.nome_paciente) {
+    form.nome_paciente = newPaciente.nome || "";
+    form.data_nascimento = newPaciente.data_nascimento || "";
+    form.sexo = newPaciente.sexo || "";
+    form.telefone_residencial = newPaciente.telefone || "";
+    form.endereco = newPaciente.morada || "";
+    
+    // Calculate age if data_nascimento is set
+    if (newPaciente.data_nascimento) {
+      form.idade = calcAge(newPaciente.data_nascimento);
+    }
+  }
+}, { immediate: true })
+
+// If ID is provided but not ficha, load it
+if (props.id && !props.ficha) {
+  loadFicha(props.id)
+}
 </script>
 
 <template>
   <Card>
     <CardContent class="space-y-6">
       <!-- Header -->
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between mt-4">
         <h1 class="text-2xl font-bold flex items-center">
           <ClipboardList class="mr-2 h-6 w-6"/> Ficha Clínica
         </h1>
         <div class="flex gap-2">
-          <Button variant="outline" :disabled="saving" @click="resetForm">
-            <RefreshCw class="mr-2 h-4 w-4"/> Limpar
-          </Button>
+        
           <Button :disabled="saving" @click="saveForm">
             <Save class="mr-2 h-4 w-4"/> Salvar
           </Button>
@@ -356,19 +437,6 @@ if (props.id) loadFicha(props.id)
           <Textarea id="exame_clinico" v-model="form.exame_clinico" rows="4" />
         </div>
 
-        <!-- Plano Geral de Tratamento -->
-        <div class="space-y-4 border rounded-md p-4">
-          <h2 class="text-xl font-semibold">6. Plano Geral de Tratamento</h2>
-          <div class="space-y-2 mt-4">
-            <Label for="mapa_dentario">Mapa Dentário</Label>
-            <Textarea id="mapa_dentario" v-model="form.plano_geral.mapa_dentario" rows="3" />
-          </div>
-          <div class="space-y-2">
-            <Label for="notas_plano">Notas</Label>
-            <Textarea id="notas_plano" v-model="form.plano_geral.notas" rows="3" />
-          </div>
-        </div>
-
         <!-- Observações Finais -->
         <div class="space-y-2">
           <h2 class="text-xl font-semibold border-b pb-2">Observações Finais</h2>
@@ -377,12 +445,10 @@ if (props.id) loadFicha(props.id)
 
         <!-- Ações -->
         <DialogFooter>
-          <Button variant="outline" @click="() => emit('cancel')">Cancelar</Button>
           <Button type="button" @click="saveForm">Salvar</Button>
         </DialogFooter>
       </form>
+      
     </CardContent>
   </Card>
 </template>
-
-

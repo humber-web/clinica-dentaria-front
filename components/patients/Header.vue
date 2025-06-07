@@ -9,13 +9,7 @@ import {
 
 const props = defineProps({
   paciente: {
-    type: Object as PropType<{
-      id: string;
-      nome: string;
-      idade: number;
-      sexo: string;
-      nif?: string;
-    }>,
+    type: Object,
     required: true,
   },
   isLoading: {

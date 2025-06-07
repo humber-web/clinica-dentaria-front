@@ -1,38 +1,69 @@
-import { ref, computed, watch } from 'vue'
-import { useMarcacoes } from '~/composables/useMarcacao'
-import { usePacientes }  from '~/composables/usePacientes'
-import type { UtilizadorResponse } from '~/types/utilizador'
-import type { Clinica } from '~/types/clinica'
+import { ref, computed, watch } from "vue";
+import { useMarcacoes } from "~/composables/useMarcacao";
+import { usePacientes } from "~/composables/usePacientes";
+import { useConsultas } from "~/composables/useConsultas";
+import type { UtilizadorResponse } from "~/types/utilizador";
+import type { Clinica } from "~/types/clinica";
 
-export function useDoctorDashboard(loggedUser: UtilizadorResponse|null, clinic: Clinica|null) {
-  const { events, fetchMarcacoes } = useMarcacoes()
-  const { pacientes, fetchPacientes } = usePacientes()
+export function useDoctorDashboard(
+  loggedUser: UtilizadorResponse | null,
+  clinic: Clinica | null
+) {
+  const { events, fetchMarcacoes } = useMarcacoes();
+  const { pacientes, fetchPacientes } = usePacientes();
+  const activeConsultation = ref<any>(null);
+  const { fetchConsultas } = useConsultas();
+
+  async function fetchActiveConsultation() {
+    if (!loggedUser?.id || !clinic?.id) return null;
+
+    try {
+      // Get all consultations for this doctor in this clinic
+      const consultas = await fetchConsultas(clinic.id, loggedUser.id);
+
+      // Find any consultation with estado="iniciada"
+      const active = consultas.find((c) => c.estado === "iniciada");
+      activeConsultation.value = active || null;
+
+      return active;
+    } catch (error) {
+      console.error("Error fetching active consultation:", error);
+      return null;
+    }
+  }
 
   const proximasConsultas = computed(() =>
     events.value
-      .filter(e => e.medico_id === loggedUser?.id)
-      .sort((a,b) => a.start.getTime() - b.start.getTime())
+      .filter((e) => e.medico_id === loggedUser?.id)
+      .sort((a, b) => a.start.getTime() - b.start.getTime())
       .slice(0, 1)
-  )
+  );
 
   const estatisticas = computed(() => ({
-    consultasHoje: events.value.filter(e =>
-      e.medico_id === loggedUser?.id &&
-      new Date(e.start).toDateString() === new Date().toDateString()
+    consultasHoje: events.value.filter(
+      (e) =>
+        e.medico_id === loggedUser?.id &&
+        new Date(e.start).toDateString() === new Date().toDateString()
     ).length,
-    pendentes: events.value.filter(e => e.estado === 'rascunho').length,
-    faltas:    events.value.filter(e => e.estado === 'falta').length,
-  }))
+    pendentes: events.value.filter((e) => e.estado === "rascunho").length,
+    faltas: events.value.filter((e) => e.estado === "falta").length,
+  }));
 
   function loadAll() {
     if (clinic?.id && loggedUser?.id) {
-      fetchMarcacoes(clinic.id, loggedUser.id)
-      fetchPacientes(clinic.id)
+      fetchMarcacoes(clinic.id, loggedUser.id);
+      fetchPacientes(clinic.id);
     }
   }
 
   // Carrega sempre que mudar utilizador ou clínica
-  watch([() => clinic?.id, () => loggedUser?.id], loadAll, { immediate: true })
+  watch([() => clinic?.id, () => loggedUser?.id], loadAll, { immediate: true });
 
-  return { proximasConsultas, estatisticas, pacientes }
+  return {
+    proximasConsultas,
+    estatisticas,
+    pacientes,
+    fetchActiveConsultation,
+    activeConsultation,
+  };
 }

@@ -1,6 +1,8 @@
 <template>
   <div v-if="isLoading" class="flex items-center justify-center h-screen">
-    <div class="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+    <div
+      class="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"
+    ></div>
   </div>
   <main v-else class="p-8 space-y-8">
     <!-- Header -->
@@ -11,15 +13,40 @@
     <!-- Grid responsivo com cards principais -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Card Próxima Consulta -->
-      <Card>
+      <Card class="card-hover">
         <CardHeader>
           <CardTitle class="flex items-center gap-2">
             <CalendarIcon class="w-5 h-5" />
-            Próxima Consulta
+            {{
+              activeConsultation ? "Consulta em Andamento" : "Próxima Consulta"
+            }}
           </CardTitle>
         </CardHeader>
         <CardContent class="space-y-4">
-          <div class="space-y-2">
+          <div v-if="activeConsultation" class="space-y-2">
+            <div class="flex items-center gap-2 text-sm">
+              <UserIcon class="w-4 h-4" />
+              <span class="font-medium">{{
+                activeConsultation.paciente?.nome || "Paciente"
+              }}</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-muted-foreground">
+              <ClipboardMinus class="w-4 h-4" />
+              <p>{{ activeConsultation.observacoes || "Sem observações" }}</p>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-muted-foreground">
+              <BuildingIcon class="w-4 h-4" />
+              <span>{{ activeConsultation.entidade?.nome || "Entidade" }}</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-amber-500">
+              <AlertCircleIcon class="w-4 h-4" />
+              <span
+                >Consulta iniciada em
+                {{ formatDataHora(activeConsultation.data_inicio) }}</span
+              >
+            </div>
+          </div>
+          <div v-else-if="proximaConsulta.start" class="space-y-2">
             <div class="flex items-center gap-2 text-sm text-muted-foreground">
               <ClockIcon class="w-4 h-4" />
               <span>{{ formatDataHora(proximaConsulta.start) }}</span>
@@ -27,7 +54,7 @@
             <div class="flex items-center gap-2 text-sm">
               <UserIcon class="w-4 h-4" />
               <span class="font-medium">{{
-                proximaConsulta.paciente.nome
+                proximaConsulta.paciente?.nome
               }}</span>
             </div>
             <div class="flex items-center gap-2 text-sm text-muted-foreground">
@@ -36,12 +63,25 @@
             </div>
             <div class="flex items-center gap-2 text-sm text-muted-foreground">
               <BuildingIcon class="w-4 h-4" />
-              <span>{{ proximaConsulta.entidade.nome }}</span>
+              <span>{{ proximaConsulta.entidade?.nome }}</span>
             </div>
           </div>
-          <Button class="w-full" @click="iniciarConsulta">
-            <PlayIcon class="w-4 h-4 mr-2" />
-            Iniciar Consulta
+          <div v-else class="text-center py-4 text-muted-foreground">
+            Não há consultas agendadas.
+          </div>
+          <Button
+            class="w-full"
+            @click="handleConsultaAction"
+            :variant="activeConsultation ? 'default' : 'secondary'"
+          >
+            <template v-if="activeConsultation">
+              <ArrowRightIcon class="w-4 h-4 mr-2" />
+              Continuar Consulta
+            </template>
+            <template v-else>
+              <PlayIcon class="w-4 h-4 mr-2" />
+              Iniciar Consulta
+            </template>
           </Button>
         </CardContent>
       </Card>
@@ -247,7 +287,13 @@ const { createConsulta } = useConsultas();
 const loggedUser = useState<UtilizadorResponse | null>("user");
 const selectedClinic = useState<Clinica | null>("selectedClinic");
 const isLoading = ref(true);
-const { proximasConsultas, estatisticas, pacientes } = computed(() => {
+const {
+  proximasConsultas,
+  estatisticas,
+  pacientes,
+  activeConsultation,
+  fetchActiveConsultation,
+} = computed(() => {
   if (loggedUser.value && selectedClinic.value) {
     return useDoctorDashboard(loggedUser.value, selectedClinic.value);
   }
@@ -255,6 +301,8 @@ const { proximasConsultas, estatisticas, pacientes } = computed(() => {
     proximasConsultas: ref([]),
     estatisticas: ref({}),
     pacientes: ref([]),
+    activeConsultation: ref(null),
+    fetchActiveConsultation: async () => null,
   };
 }).value;
 
@@ -289,20 +337,48 @@ function formatDataHora(date: string | Date) {
 }
 
 // Funções de ação
-async function iniciarConsulta() {
-  if (!proximaConsulta.value) return;
+async function handleConsultaAction() {
+  if (activeConsultation.value) {
+    // If there's an active consultation, navigate to it
+    navigateTo(`/doctor/consulta/${activeConsultation.value.id}`);
+    return;
+  }
 
-  // 1) Cria a consulta no backend
-  const nova = await createConsulta({
-    paciente_id: proximaConsulta.value.paciente.id,
-    clinica_id: selectedClinic.value?.id || 0,
-    entidade_id: proximaConsulta.value.entidade.id,
-    medico_id: loggedUser.value!.id,
-    observacoes: "",
-  });
+  if (!proximaConsulta.value || !proximaConsulta.value.paciente?.id) {
+    toast({
+      title: "Aviso",
+      description: "Não há consulta disponível para iniciar",
+      variant: "default",
+    });
+    return;
+  }
 
-  if (nova?.id) {
-    navigateTo(`/doctor/consulta/${nova.id}`);
+  try {
+    // Create a new consultation
+    const nova = await createConsulta({
+      paciente_id: proximaConsulta.value.paciente.id,
+      clinica_id: selectedClinic.value?.id || 0,
+      entidade_id: proximaConsulta.value.entidade.id,
+      medico_id: loggedUser.value!.id,
+      observacoes: proximaConsulta.value.observacoes || "",
+    });
+
+    if (nova?.id) {
+      navigateTo(`/doctor/consulta/${nova.id}`);
+    } else {
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar a consulta",
+        variant: "destructive",
+      });
+    }
+  } catch (error) {
+    console.error("Erro ao iniciar consulta:", error);
+    toast({
+      title: "Erro",
+      description: "Ocorreu um erro ao iniciar a consulta",
+      variant: "destructive",
+    });
   }
 }
 
@@ -335,6 +411,13 @@ setInterval(() => {
     minute: "2-digit",
   });
 }, 60000);
+
+onMounted(async () => {
+  if (loggedUser.value && selectedClinic.value) {
+    await fetchActiveConsultation();
+    isLoading.value = false;
+  }
+});
 </script>
 
 <style scoped>
