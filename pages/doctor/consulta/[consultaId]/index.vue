@@ -1,7 +1,7 @@
 <template>
   <div class="p-4 md:p-6 space-y-6">
     <!-- Header da Consulta -->
-    <ConsultasHeader :consulta="currentConsulta!" :is-loading="loading">
+    <ConsultasHeader :consulta="currentConsulta!">
       <template #actions>
         <Button @click="finalizarConsulta">
           <Check class="mr-2 h-4 w-4" /> Concluir
@@ -10,12 +10,21 @@
     </ConsultasHeader>
 
     <!-- As Tabs principais -->
-    <Tabs v-model:active="activeTab">
+    <Tabs v-model="activeTab">
       <TabsList>
-        <TabsTrigger value="orcamentos">Orçamentos</TabsTrigger>
+        <TabsTrigger value="plano">Plano</TabsTrigger>
         <TabsTrigger value="artigos">Artigos</TabsTrigger>
+        <TabsTrigger value="orcamentos">Orçamentos</TabsTrigger>
         <TabsTrigger value="historico">Histórico</TabsTrigger>
       </TabsList>
+      <TabsContent value="plano">
+        <PatientsPlanoTab
+          :isLoading="loadingPlano"
+          :planos="planoAtivo"
+         @start-procedure="startProcedimento"
+        />
+        
+      </TabsContent>
       <TabsContent value="orcamentos">
         <!-- Cabeçalho com botão de novo orçamento -->
         <div class="flex justify-between items-center mb-4">
@@ -83,12 +92,42 @@
         />
       </TabsContent>
       <!-- Histórico de Consultas do Paciente -->
-      <TabsContent value="historico">
-        <ConsultasHistoricoTab
-          :consultas="historicoConsultas"
-          :loading="historicoLoading"
-          @view="verConsulta"
-        />
+      <TabsContent value="historico" class="min-h-[300px]">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-medium">Histórico de Consultas</h3>
+        </div>
+
+        <Transition name="fade" mode="out-in">
+          <div v-if="historicoLoading" key="loading" class="py-8 text-center">
+            <div
+              class="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"
+            ></div>
+            <p class="text-muted-foreground">Carregando histórico...</p>
+          </div>
+
+          <Card
+            v-else-if="!historicoConsultas.length"
+            key="empty"
+            class="py-8 text-center"
+          >
+            <CardContent>
+              <div class="flex flex-col items-center justify-center space-y-3">
+                <ClipboardList class="h-10 w-10 text-muted-foreground" />
+                <p class="text-muted-foreground">
+                  Nenhuma consulta anterior encontrada para este paciente
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div v-else key="content">
+            <ConsultasHistoricoTab
+              :consultas="historicoConsultas"
+              :loading="false"
+              @view="verConsulta"
+            />
+          </div>
+        </Transition>
       </TabsContent>
     </Tabs>
     <ConsultasAddArtigoModal
@@ -110,6 +149,7 @@ import { useConsultas } from "~/composables/useConsultas";
 import { useOrcamentos } from "~/composables/useOrcamentos";
 import { useEntidades } from "~/composables/useEntidades";
 import { useArtigos } from "~/composables/useArtigos";
+import { usePlanos } from "~/composables/usePlanos";
 import type { Orcamento } from "~/types/orcamento";
 import type { PacienteListItem } from "~/types/pacientes";
 import type {
@@ -152,22 +192,27 @@ const {
   createOrcamento,
 } = useOrcamentos();
 
+const { fetchPlanoAtivo, planoAtivo, loadingPlano, error } = usePlanos();
+
 const { entidades, fetchEntidades } = useEntidades();
 const { fetchArtigos } = useArtigos();
-const activeTab = ref<"orcamentos" | "artigos" | "historico">("orcamentos");
+const activeTab = ref<"orcamentos" | "artigos" | "historico" | "plano">(
+  "plano"
+);
 const creatingOrcamento = ref(false);
 const showAddArtigoModal = ref(false);
 const itemEmEdicao = ref<ConsultaItemRead | undefined>(undefined);
 const historicoConsultas = ref<ConsultaFull[]>([]);
 const historicoLoading = ref(false);
+let isLoadingHistorico = false;
 
 onMounted(async () => {
   try {
     const id = Number(route.params.consultaId);
-    
+
     // First, load the primary data in sequence instead of parallel
     await getConsulta(id);
-    
+
     // After the consulta is loaded, then load supporting data
     await Promise.all([fetchEntidades(), fetchArtigos()]);
 
@@ -177,6 +222,8 @@ onMounted(async () => {
         await fetchOrcamentosByPaciente(currentConsulta.value.paciente.id);
       } else if (activeTab.value === "historico") {
         await carregarHistoricoConsultas(currentConsulta.value.paciente.id);
+      } else if (activeTab.value === "plano") {
+        await fetchPlanoAtivo(currentConsulta.value.paciente.id);
       }
     }
   } catch (error) {
@@ -189,24 +236,23 @@ onMounted(async () => {
   }
 });
 
-watch(
-  activeTab,
-  async (newTab) => {
-    if (!currentConsulta.value?.paciente?.id) return;
-    
-    if (newTab === "orcamentos") {
-      await fetchOrcamentosByPaciente(currentConsulta.value.paciente.id);
-    } else if (newTab === "historico") {
-      await carregarHistoricoConsultas(currentConsulta.value.paciente.id);
-    }
+watch(activeTab, async (newTab) => {
+  if (!currentConsulta.value?.paciente?.id) return;
+  if (newTab === "orcamentos") {
+    await fetchOrcamentosByPaciente(currentConsulta.value.paciente.id);
+  } else if (newTab === "historico") {
+    await carregarHistoricoConsultas(currentConsulta.value.paciente.id);
+  } else if (newTab === "plano") {
+    // Load the active treatment plan when the tab is switched
+    await fetchPlanoAtivo(currentConsulta.value.paciente.id);
   }
-);
+});
 
 watch(
   () => currentConsulta.value?.paciente?.id,
   async (newPacienteId) => {
     if (!newPacienteId) return;
-    
+
     if (activeTab.value === "orcamentos") {
       await fetchOrcamentosByPaciente(newPacienteId);
     } else if (activeTab.value === "historico") {
@@ -215,44 +261,43 @@ watch(
   }
 );
 
-
 async function carregarHistoricoConsultas(pacienteId: number) {
+  // Prevent multiple simultaneous calls
+  if (isLoadingHistorico) return;
+
   try {
-    console.log(
-      "Iniciando carregamento do histórico para paciente:",
-      pacienteId
-    );
+    isLoadingHistorico = true;
     historicoLoading.value = true;
+
+    // Record the start time
+    const startTime = Date.now();
+
+    // Fetch data
     const consultaId = Number(route.params.consultaId);
-
-    // Obter o ID da clínica atual
     const clinicaId = currentConsulta.value?.clinica_id || 0;
-    console.log("Usando clínica ID:", clinicaId);
-
-    // Buscar consultas do paciente, filtrando pela clínica atual se disponível
     const todasConsultas = await getConsultasByPacienteEClinica(
       clinicaId,
       pacienteId
     );
-    console.log("Consultas carregadas:", todasConsultas.length);
-    console.log("Consultas:", todasConsultas);
 
+    // Process data
     if (!todasConsultas || todasConsultas.length === 0) {
-      console.log("Nenhuma consulta encontrada");
       historicoConsultas.value = [];
-      return;
+    } else {
+      historicoConsultas.value = todasConsultas
+        .filter((c) => c.id !== consultaId)
+        .sort(
+          (a, b) =>
+            new Date(b.data_inicio).getTime() -
+            new Date(a.data_inicio).getTime()
+        );
     }
 
-    historicoConsultas.value = todasConsultas
-      .filter((c) => c.id !== consultaId)
-      .sort(
-        (a, b) =>
-          new Date(b.data_inicio).getTime() - new Date(a.data_inicio).getTime()
-      );
-
-    console.log(
-      `Carregadas ${historicoConsultas.value.length} consultas para o histórico`
-    );
+    // Ensure loading shows for at least 400ms for a smoother experience
+    const elapsedTime = Date.now() - startTime;
+    if (elapsedTime < 400) {
+      await new Promise((resolve) => setTimeout(resolve, 400 - elapsedTime));
+    }
   } catch (error) {
     console.error("Erro ao carregar histórico:", error);
     toast({
@@ -263,6 +308,7 @@ async function carregarHistoricoConsultas(pacienteId: number) {
     historicoConsultas.value = [];
   } finally {
     historicoLoading.value = false;
+    isLoadingHistorico = false;
   }
 }
 
@@ -537,4 +583,20 @@ function verConsulta(id: number) {
   // Se for outra consulta, navega para ela
   router.push(`/doctor/consulta/${id}`);
 }
+
+
+function startProcedimento(item: Number) {
+  console.log("Iniciar procedimento:", item);
+}
 </script>
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

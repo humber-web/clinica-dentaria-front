@@ -270,7 +270,7 @@ function getStatusText(estado: string): string {
                     </TableHeader>
                     <TableBody>
                       <TableRow v-for="item in consulta.itens" :key="item.id">
-                        <TableCell>{{ item.artigo?.descricao || `Artigo #${item.artigo_id}` }}</TableCell>
+                        <TableCell>{{ item.artigo_descricao || `Artigo#${item.artigo_id}` }}</TableCell>
                         <TableCell>{{ item.numero_dente || '—' }}</TableCell>
                         <TableCell>{{ formatFaces(item.face) }}</TableCell>
                         <TableCell class="text-right">{{ formatCurrency(item.total) }}</TableCell>
