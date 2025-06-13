@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Edit, ClipboardList, Plus } from "lucide-vue-next";
+import { Edit, ClipboardList, Plus, ArrowLeft } from "lucide-vue-next";
 import { useRoute, useRouter } from "vue-router";
 import { usePacientes } from "~/composables/usePacientes";
 import { useToast } from "~/components/ui/toast";
@@ -13,10 +13,19 @@ import { formatPaciente } from "~/types/pacientes";
 const route = useRoute();
 const router = useRouter();
 const { toast } = useToast();
-
+const consultaId = computed(() =>
+  route.query.consulta_id ? Number(route.query.consulta_id) : null
+);
 const { fetchPacienteById, loading: isLoading, error } = usePacientes();
 const rawPaciente = ref<Paciente | null>(null);
 
+function voltarParaConsulta() {
+  if (consultaId.value) {
+    router.push(`/doctor/consulta/${consultaId.value}`);
+  } else {
+    router.push("/doctor/dashboard"); // Or wherever appropriate
+  }
+}
 const paciente = computed(() => {
   if (!rawPaciente.value) return null;
   return formatPaciente(rawPaciente.value);
@@ -41,12 +50,12 @@ function openFichaClinica() {
   console.log("Abrir ficha clínica");
 }
 function openAgendarConsulta() {
-  if (paciente.value?.id) {
-    router.push({
-      path: "/master/appointments/new",
-      query: { paciente_id: paciente.value.id.toString() },
-    });
-  }
+  // if (paciente.value?.id) {
+  //   router.push({
+  //     path: "/master/appointments/new",
+  //     query: { paciente_id: paciente.value.id.toString() },
+  //   });
+  // }
 }
 
 function openAdicionarAnotacao() {
@@ -61,7 +70,8 @@ function viewConsulta(consulta: ConsultaType) {
   // router.push(`/master/appointment/${consulta.id}`);
   toast({
     title: "Em desenvolvimento",
-    description: "A funcionalidade de visualizar consulta ainda não está implementada.",
+    description:
+      "A funcionalidade de visualizar consulta ainda não está implementada.",
   });
 }
 
@@ -69,7 +79,8 @@ function viewPlano(plano: PlanoTratamento) {
   // router.push(`/master/patient/${patientId.value}/plano/${plano.id}`);
   toast({
     title: "Em desenvolvimento",
-    description: "A funcionalidade de visualizar plano ainda não está implementada.",
+    description:
+      "A funcionalidade de visualizar plano ainda não está implementada.",
   });
 }
 
@@ -77,7 +88,8 @@ function editPlano(plano: PlanoTratamento) {
   // router.push(`/master/patient/${patientId.value}/plano/${plano.id}/edit`);
   toast({
     title: "Em desenvolvimento",
-    description: "A funcionalidade de editar plano ainda não está implementada.",
+    description:
+      "A funcionalidade de editar plano ainda não está implementada.",
   });
 }
 
@@ -85,15 +97,34 @@ function newPlano() {
   // router.push(`/master/patient/${patientId.value}/plano/new`);
   toast({
     title: "Em desenvolvimento",
-    description: "A funcionalidade de criar novo plano ainda não está implementada.",
+    description:
+      "A funcionalidade de criar novo plano ainda não está implementada.",
   });
 }
 
 onMounted(async () => {
   // First check if there's a tab parameter in the URL
   const tabParam = route.query.tab as string;
-  if (tabParam && ['resumo', 'ficha-clinica', 'consultas', 'planos', 'orcamentos', 'ficheiros', 'pagamentos'].includes(tabParam)) {
-    activeTab.value = tabParam as 'resumo' | 'ficha-clinica' | 'consultas' | 'planos' | 'orcamentos' | 'ficheiros' | 'pagamentos';
+  if (
+    tabParam &&
+    [
+      "resumo",
+      "ficha-clinica",
+      "consultas",
+      "planos",
+      "orcamentos",
+      "ficheiros",
+      "pagamentos",
+    ].includes(tabParam)
+  ) {
+    activeTab.value = tabParam as
+      | "resumo"
+      | "ficha-clinica"
+      | "consultas"
+      | "planos"
+      | "orcamentos"
+      | "ficheiros"
+      | "pagamentos";
   }
 
   // Then load the patient data
@@ -109,17 +140,38 @@ onMounted(async () => {
         variant: "destructive",
       });
       // Optionally redirect back to patients list
-      router.push("/master/patients");
+      router.push("/doctor/patients");
     }
   }
 });
 
 // Also add a watcher for route changes
-watch(() => route.query.tab, (newTab) => {
-  if (newTab && ['resumo', 'ficha-clinica', 'consultas', 'planos', 'orcamentos', 'ficheiros', 'pagamentos'].includes(newTab as string)) {
-    activeTab.value = newTab as 'resumo' | 'ficha-clinica' | 'consultas' | 'planos' | 'orcamentos' | 'ficheiros' | 'pagamentos';
+watch(
+  () => route.query.tab,
+  (newTab) => {
+    if (
+      newTab &&
+      [
+        "resumo",
+        "ficha-clinica",
+        "consultas",
+        "planos",
+        "orcamentos",
+        "ficheiros",
+        "pagamentos",
+      ].includes(newTab as string)
+    ) {
+      activeTab.value = newTab as
+        | "resumo"
+        | "ficha-clinica"
+        | "consultas"
+        | "planos"
+        | "orcamentos"
+        | "ficheiros"
+        | "pagamentos";
+    }
   }
-});
+);
 </script>
 
 <template>
@@ -141,7 +193,7 @@ watch(() => route.query.tab, (newTab) => {
           }}
         </AlertDescription>
       </Alert>
-      <Button class="mt-4" @click="router.push('/master/patients')">
+      <Button class="mt-4" @click="router.push('/doctor/patients')">
         Voltar para lista
       </Button>
     </div>
@@ -150,6 +202,13 @@ watch(() => route.query.tab, (newTab) => {
     <template v-else>
       <PatientsHeader :paciente="paciente" :isLoading="isLoading">
         <template #actions>
+          <Button
+            v-if="consultaId"
+            variant="outline"
+            @click="voltarParaConsulta"
+          >
+            <ArrowLeft class="mr-2 h-4 w-4" /> Voltar para Consulta
+          </Button>
           <Button @click="openFichaClinica">
             <ClipboardList class="mr-2 h-4 w-4" />
             {{

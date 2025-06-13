@@ -105,7 +105,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useConsultas } from "~/composables/useConsultas";
 import { useOrcamentos } from "~/composables/useOrcamentos";
@@ -163,36 +162,59 @@ const historicoConsultas = ref<ConsultaFull[]>([]);
 const historicoLoading = ref(false);
 
 onMounted(async () => {
-  const id = Number(route.params.consultaId);
-  await Promise.all([getConsulta(id), fetchEntidades(), fetchArtigos()]);
+  try {
+    const id = Number(route.params.consultaId);
+    
+    // First, load the primary data in sequence instead of parallel
+    await getConsulta(id);
+    
+    // After the consulta is loaded, then load supporting data
+    await Promise.all([fetchEntidades(), fetchArtigos()]);
 
-  if (currentConsulta.value?.paciente?.id) {
-    await carregarHistoricoConsultas(currentConsulta.value.paciente.id);
+    // Only load related data after the main consulta is available
+    if (currentConsulta.value?.paciente?.id) {
+      if (activeTab.value === "orcamentos") {
+        await fetchOrcamentosByPaciente(currentConsulta.value.paciente.id);
+      } else if (activeTab.value === "historico") {
+        await carregarHistoricoConsultas(currentConsulta.value.paciente.id);
+      }
+    }
+  } catch (error) {
+    console.error("Error loading initial data:", error);
+    toast({
+      title: "Erro",
+      description: "Ocorreu um erro ao carregar os dados iniciais",
+      variant: "destructive",
+    });
   }
 });
 
 watch(
-  [activeTab, currentConsulta],
-  async ([tab, consulta]) => {
-    console.log("Watch disparado:", { tab, consulta });
-
-    if (!consulta) {
-      console.log("Consulta não definida, ignorando");
-      return;
+  activeTab,
+  async (newTab) => {
+    if (!currentConsulta.value?.paciente?.id) return;
+    
+    if (newTab === "orcamentos") {
+      await fetchOrcamentosByPaciente(currentConsulta.value.paciente.id);
+    } else if (newTab === "historico") {
+      await carregarHistoricoConsultas(currentConsulta.value.paciente.id);
     }
+  }
+);
 
-    if (tab === "orcamentos" && consulta.paciente?.id) {
-      console.log("Carregando orçamentos para paciente:", consulta.paciente.id);
-      fetchOrcamentosByPaciente(consulta.paciente.id);
+watch(
+  () => currentConsulta.value?.paciente?.id,
+  async (newPacienteId) => {
+    if (!newPacienteId) return;
+    
+    if (activeTab.value === "orcamentos") {
+      await fetchOrcamentosByPaciente(newPacienteId);
+    } else if (activeTab.value === "historico") {
+      await carregarHistoricoConsultas(newPacienteId);
     }
+  }
+);
 
-    if (tab === "historico" && consulta.paciente?.id) {
-      console.log("Carregando histórico para paciente:", consulta.paciente.id);
-      await carregarHistoricoConsultas(consulta.paciente.id);
-    }
-  },
-  { immediate: true }
-); // Adicionando immediate: true para executar quando o componente é montado
 
 async function carregarHistoricoConsultas(pacienteId: number) {
   try {

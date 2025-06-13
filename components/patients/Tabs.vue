@@ -3,7 +3,7 @@
 import { defineProps, defineEmits } from 'vue'
 
 const props = defineProps<{
-  active: 'resumo' | 'ficha-clinica' | 'consultas' | 'planos'
+  active: 'resumo' | 'ficha-clinica' | 'consultas' | 'planos' | 'orcamentos'
 }>()
 
 const emit = defineEmits<{
@@ -44,6 +44,13 @@ function select(tab: typeof props.active) {
         class="px-3 py-1.5 text-sm"
       >
         Ficha Clínica
+      </button>
+      <button
+        @click="select('orcamentos')"
+        :class="props.active==='orcamentos' ? 'border-primary text-foreground border-b-2' : 'text-muted-foreground'"
+        class="px-3 py-1.5 text-sm"
+      >
+        Orçamentos
       </button>
       <button
         @click="select('consultas')"
