@@ -39,7 +39,7 @@
               <span>{{ activeConsultation.entidade?.nome || "Entidade" }}</span>
             </div>
             <div class="flex items-center gap-2 text-sm text-amber-500">
-              <AlertCircleIcon class="w-4 h-4" />
+              <AlertCircle class="w-4 h-4" />
               <span
                 >Consulta iniciada em
                 {{ formatDataHora(activeConsultation.data_inicio) }}</span
@@ -273,6 +273,7 @@ import {
   StarIcon,
   FileTextIcon,
   ClipboardMinus,
+  AlertCircle,
 } from "lucide-vue-next";
 
 // Definir meta da página

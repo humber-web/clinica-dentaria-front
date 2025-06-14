@@ -200,6 +200,13 @@ watch(() => route.query.tab, (newTab) => {
         @view="viewPlano"
         @edit="editPlano"
       />
+
+      <PatientsPagamentos
+        v-if="activeTab === 'pagamentos'"
+        :isLoading="isLoading"
+        :pacienteId="paciente.id"
+      
+      />
     </template>
   </div>
 </template>

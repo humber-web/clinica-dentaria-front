@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
-
+import { AlertCircle } from 'lucide-vue-next';
 type LoginResponse = { access_token: string };
 type UserResponse = { perfil: { perfil: string } | null };
 

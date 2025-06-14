@@ -1,6 +1,5 @@
 <!-- src/components/UserTableComponent.vue -->
 <script setup lang="ts">
-import { defineProps, defineEmits } from "vue";
 import {
   Table,
   TableBody,

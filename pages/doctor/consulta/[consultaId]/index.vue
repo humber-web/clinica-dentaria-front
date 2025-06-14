@@ -3,8 +3,16 @@
     <!-- Header da Consulta -->
     <ConsultasHeader :consulta="currentConsulta!">
       <template #actions>
-        <Button @click="finalizarConsulta">
-          <Check class="mr-2 h-4 w-4" /> Concluir
+        <Button
+          @click="finalizarConsulta"
+          :disabled="loading || currentConsulta?.estado === 'concluida'"
+        >
+          <Check class="mr-2 h-4 w-4" />
+          {{
+            currentConsulta?.estado === "concluida"
+              ? "Concluída"
+              : "Finalizar Consulta"
+          }}
         </Button>
       </template>
     </ConsultasHeader>
@@ -21,9 +29,8 @@
         <PatientsPlanoTab
           :isLoading="loadingPlano"
           :planos="planoAtivo"
-         @start-procedure="startProcedimento"
+          @start-procedure="startProcedimentItem"
         />
-        
       </TabsContent>
       <TabsContent value="orcamentos">
         <!-- Cabeçalho com botão de novo orçamento -->
@@ -150,6 +157,7 @@ import { useOrcamentos } from "~/composables/useOrcamentos";
 import { useEntidades } from "~/composables/useEntidades";
 import { useArtigos } from "~/composables/useArtigos";
 import { usePlanos } from "~/composables/usePlanos";
+import { useFaturacao } from "~/composables/useFaturacao";
 import type { Orcamento } from "~/types/orcamento";
 import type { PacienteListItem } from "~/types/pacientes";
 import type {
@@ -192,8 +200,9 @@ const {
   createOrcamento,
 } = useOrcamentos();
 
-const { fetchPlanoAtivo, planoAtivo, loadingPlano, error } = usePlanos();
-
+const { fetchPlanoAtivo, planoAtivo, loadingPlano, error, startProcedimento } =
+  usePlanos();
+const { createFaturaFromConsulta } = useFaturacao();
 const { entidades, fetchEntidades } = useEntidades();
 const { fetchArtigos } = useArtigos();
 const activeTab = ref<"orcamentos" | "artigos" | "historico" | "plano">(
@@ -407,6 +416,7 @@ function fecharModalArtigo() {
 function editarConsulta() {
   // lógica de editar
 }
+
 async function finalizarConsulta() {
   try {
     if (currentConsulta.value?.estado === "concluida") {
@@ -418,37 +428,89 @@ async function finalizarConsulta() {
       return;
     }
 
-    // Mostrar feedback de carregamento
     toast({
       title: "Processando",
       description: "Concluindo consulta...",
     });
 
     const consultaId = Number(route.params.consultaId);
+    const pacienteId = currentConsulta.value?.paciente_id;
 
-    // Preparar os dados a serem atualizados
+    if (!pacienteId) {
+      throw new Error("Paciente não identificado na consulta");
+    }
+
+    // Update the consultation status
     const dadosAtualizacao = {
       estado: "concluida",
-      data_fim: new Date().toISOString(), // Define a data atual como data de fim
+      data_fim: new Date().toISOString(),
     };
 
-    // Chamar a função de atualização da consulta
     const resultado = await updateConsulta(consultaId, dadosAtualizacao);
 
     if (resultado) {
-      // Recarregar a consulta para atualizar os dados
       await getConsulta(consultaId);
 
-      // Mostrar feedback de sucesso
-      toast({
-        title: "Sucesso",
-        description: "Consulta concluída com sucesso",
-      });
+      // Use the existing planoAtivo data - no need to fetch again
+      const temPlanoAtivo = planoAtivo.value && "id" in planoAtivo.value;
+
+      try {
+        const { createFatura } = useFaturacao();
+        let fatura;
+
+        if (temPlanoAtivo && planoAtivo.value?.id) {
+          // Create invoice for the plan
+          const planoId = planoAtivo.value.id;
+
+          const faturaPayload = {
+            paciente_id: pacienteId,
+            tipo: "plano" as const,
+            consulta_id: null,
+            plano_id: planoId,
+          };
+
+          fatura = await createFatura(faturaPayload);
+        } else {
+          // Create invoice for the consultation
+          const faturaPayload = {
+            paciente_id: pacienteId,
+            tipo: "consulta" as const,
+            consulta_id: consultaId,
+            plano_id: null,
+          };
+
+          fatura = await createFatura(faturaPayload);
+        }
+
+        if (fatura) {
+          toast({
+            title: "Sucesso",
+            description: `Consulta concluída e fatura de ${
+              temPlanoAtivo ? "plano" : "consulta"
+            } gerada com sucesso`,
+          });
+        } else {
+          toast({
+            title: "Atenção",
+            description:
+              "Consulta concluída, mas não foi possível gerar a fatura automaticamente",
+            variant: "default",
+          });
+        }
+      } catch (faturaError) {
+        console.error("Erro ao gerar fatura:", faturaError);
+
+        toast({
+          title: "Atenção",
+          description:
+            "Consulta concluída, mas houve um erro ao gerar a fatura",
+          variant: "default",
+        });
+      }
     }
   } catch (error) {
     console.error("Erro ao concluir consulta:", error);
 
-    // Mostrar feedback de erro
     toast({
       title: "Erro",
       description: "Ocorreu um erro ao concluir a consulta",
@@ -584,9 +646,57 @@ function verConsulta(id: number) {
   router.push(`/doctor/consulta/${id}`);
 }
 
+async function startProcedimentItem(item: number) {
+  if (!currentConsulta.value?.id) {
+    toast({
+      title: "Erro",
+      description:
+        "Não foi possível iniciar o procedimento. Consulta não encontrada.",
+      variant: "destructive",
+    });
+    return;
+  }
 
-function startProcedimento(item: Number) {
-  console.log("Iniciar procedimento:", item);
+  try {
+    toast({
+      title: "Processando",
+      description: "Iniciando procedimento...",
+    });
+
+    const result = await startProcedimento(item, currentConsulta.value.id);
+
+    if (result) {
+      toast({
+        title: "Sucesso",
+        description: "Procedimento iniciado com sucesso",
+      });
+
+      await Promise.all([
+        getConsulta(currentConsulta.value.id),
+        currentConsulta.value.paciente?.id &&
+          fetchPlanoAtivo(currentConsulta.value.paciente.id),
+      ]);
+    } else {
+      toast({
+        title: "Erro",
+        description:
+          "Não foi possível iniciar o procedimento. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  } catch (err) {
+    const errorMessage =
+      err instanceof Error
+        ? err.message
+        : "Ocorreu um erro ao iniciar o procedimento";
+
+    console.error("Erro ao iniciar procedimento:", err);
+    toast({
+      title: "Erro",
+      description: errorMessage,
+      variant: "destructive",
+    });
+  }
 }
 </script>
 <style scoped>

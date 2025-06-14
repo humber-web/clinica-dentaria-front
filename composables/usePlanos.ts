@@ -1,9 +1,10 @@
 import { ref } from "vue";
-import type { PlanoTratamento } from "~/types/plano"; 
+import type { PlanoTratamento } from "~/types/plano";
+import type { ConsultaItemBase } from "~/types/consulta";
 
 export function usePlanos() {
   const { get, post, put, delete: del } = useApiService();
-  
+
   const planos = ref<PlanoTratamento[]>([]);
   const currentPlano = ref<PlanoTratamento | null>(null);
   const planoAtivo = ref<PlanoTratamento | null>(null);
@@ -13,7 +14,9 @@ export function usePlanos() {
   /**
    * Fetch active treatment plan for a patient
    */
-  async function fetchPlanoAtivo(pacienteId: number): Promise<PlanoTratamento | null> {
+  async function fetchPlanoAtivo(
+    pacienteId: number
+  ): Promise<PlanoTratamento | null> {
     loadingPlano.value = true;
     error.value = null;
 
@@ -28,9 +31,12 @@ export function usePlanos() {
         planoAtivo.value = null;
         return null;
       }
-      
+
       error.value = err instanceof Error ? err.message : String(err);
-      console.error(`Erro ao buscar plano ativo para paciente ${pacienteId}:`, err);
+      console.error(
+        `Erro ao buscar plano ativo para paciente ${pacienteId}:`,
+        err
+      );
       return null;
     } finally {
       loadingPlano.value = false;
@@ -40,7 +46,9 @@ export function usePlanos() {
   /**
    * Get all treatment plans for a patient
    */
-  async function fetchPlanosPaciente(pacienteId: number): Promise<PlanoTratamento[]> {
+  async function fetchPlanosPaciente(
+    pacienteId: number
+  ): Promise<PlanoTratamento[]> {
     loadingPlano.value = true;
     error.value = null;
 
@@ -76,6 +84,42 @@ export function usePlanos() {
       loadingPlano.value = false;
     }
   }
+  async function startProcedimento(
+    planoItemId: number,
+    consultaId: number
+  ): Promise<ConsultaItemBase | null> {
+    loadingPlano.value = true;
+    error.value = null;
+
+    try {
+      // Send consulta_id as query parameter instead of in the request body
+      const data = await post(
+        `pacientes/planos/itens/${planoItemId}/start?consulta_id=${consultaId}`,
+        {} 
+      );
+
+      if (planoAtivo.value) {
+        const updatedItem = planoAtivo.value.itens?.find(
+          (item) => item.id === planoItemId
+        );
+        if (updatedItem) {
+          updatedItem.estado = "concluido";
+          updatedItem.quantidade_executada += 1;
+        }
+      }
+
+      return data;
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : String(err);
+      console.error(
+        `Erro ao iniciar procedimento do plano (item ${planoItemId}):`,
+        err
+      );
+      return null;
+    } finally {
+      loadingPlano.value = false;
+    }
+  }
 
   return {
     planos,
@@ -86,6 +130,7 @@ export function usePlanos() {
     fetchPlanoAtivo,
     fetchPlanosPaciente,
     getPlano,
+    startProcedimento,
     // Add other functions as needed (create, update, delete)
   };
 }

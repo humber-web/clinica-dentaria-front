@@ -1,5 +1,5 @@
 <script setup lang="ts">
-
+import { AlertCircle } from "lucide-vue-next";
 
 const props = defineProps<{
   user: any,
@@ -58,7 +58,7 @@ function onTelefoneInput(e: { target: { value: any } }) {
       />
     </div>
     <Alert v-if="error" variant="destructive">
-      <!-- <AlertCircle class="w-4 h-4" /> -->
+      <AlertCircle class="w-4 h-4" />
       <AlertTitle>Error</AlertTitle>
       <AlertDescription>
         {{ error }}

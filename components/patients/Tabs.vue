@@ -1,9 +1,8 @@
-<!-- src/components/PatientsTabs.vue -->
 <script setup lang="ts">
 import { defineProps, defineEmits } from 'vue'
 
 const props = defineProps<{
-  active: 'resumo' | 'ficha-clinica' | 'consultas' | 'planos' | 'orcamentos'
+  active: 'resumo' | 'ficha-clinica' | 'consultas' | 'planos' | 'orcamentos' | 'pagamentos'
 }>()
 
 const emit = defineEmits<{
@@ -65,6 +64,13 @@ function select(tab: typeof props.active) {
         class="px-3 py-1.5 text-sm"
       >
         Planos
+      </button>
+        <button
+        @click="select('pagamentos')"
+        :class="props.active==='pagamentos' ? 'border-primary text-foreground border-b-2' : 'text-muted-foreground'"
+        class="px-3 py-1.5 text-sm"
+      >
+        Pagamentos
       </button>
     </div>
   </div>
