@@ -14,7 +14,7 @@ export function useDoctorDashboard(
   const activeConsultation = ref<any>(null);
   const { fetchConsultas } = useConsultas();
 
-  async function fetchActiveConsultation() {
+  async function fetchActiveConsultation(): Promise<any> {
     if (!loggedUser?.id || !clinic?.id) return null;
 
     try {
@@ -22,7 +22,7 @@ export function useDoctorDashboard(
       const consultas = await fetchConsultas(clinic.id, loggedUser.id);
 
       // Find any consultation with estado="iniciada"
-      const active = consultas.find((c) => c.estado === "iniciada");
+      const active = consultas.find((c: { estado: string; }) => c.estado === "iniciada");
       activeConsultation.value = active || null;
 
       return active;
@@ -35,7 +35,7 @@ export function useDoctorDashboard(
   const proximasConsultas = computed(() =>
     events.value
       .filter((e) => e.medico_id === loggedUser?.id)
-      .sort((a, b) => a.start.getTime() - b.start.getTime())
+      .sort((a, b) => a.start.getTime() + b.start.getTime())
       .slice(0, 1)
   );
 

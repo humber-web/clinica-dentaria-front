@@ -1,6 +1,7 @@
 export type FaturaTipo = 'consulta' | 'plano';
 export type FaturaEstado = 'pendente' | 'parcial' | 'paga' | 'cancelada';
 export type ParcelaEstado = 'pendente' | 'parcial' | 'paga';
+export type MetodoPagamento = 'dinheiro' | 'cartao' | 'transferencia';
 
 // Base invoice type
 export interface FaturaBase {
@@ -46,12 +47,14 @@ export interface ParcelaRead extends ParcelaBase {
   valor_pago?: number | null;
   data_pagamento?: string | null; // ISO date string
   estado: ParcelaEstado;
+  metodo_pagamento?: MetodoPagamento | null;
 }
 
 // Read invoice item response
 export interface FaturaItemRead extends FaturaItemBase {
   id: number;
   total: number;
+  descricao: string; 
 }
 
 // Read invoice response
@@ -62,4 +65,13 @@ export interface FaturaRead extends FaturaBase {
   estado: FaturaEstado;
   itens: FaturaItemRead[];
   parcelas: ParcelaRead[];
+}
+
+export interface PagamentoRequest {
+  fatura_id: number;
+  parcela_id?: number;
+  valor_pago: number;
+  metodo_pagamento: MetodoPagamento;
+  data_pagamento?: string; // ISO date string
+  observacoes?: string;
 }

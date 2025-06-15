@@ -23,7 +23,7 @@
                 :key="parcela.id" 
                 :value="parcela.id.toString()"
               >
-                {{ parcela.numero }}ª parcela - {{ formatCurrency(parcela.valor) }}
+                {{ parcela.numero }}ª parcela - {{ formatCurrency(parcela.valor_planejado) }}
                 (Venc: {{ formatDate(parcela.data_vencimento) }})
               </SelectItem>
             </SelectContent>
@@ -42,6 +42,21 @@
             placeholder="0,00"
             required
           />
+        </div>
+
+        <!-- Método de Pagamento -->
+        <div class="space-y-2">
+          <Label for="metodoPagamento">Método de Pagamento</Label>
+          <Select v-model="metodoPagamento" required>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione um método de pagamento" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="dinheiro">Dinheiro</SelectItem>
+              <SelectItem value="cartao">Cartão</SelectItem>
+              <SelectItem value="transferencia">Transferência</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <!-- Data do pagamento -->
@@ -83,9 +98,9 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 
-import { useFaturacao } from '@/composables/useFaturacao';
-import { formatCurrency, formatDate } from '@/types/mockFatura';
-import type { ParcelaRead, PagamentoRequest } from '@/types/fatura';
+import { useFaturacao,formatCurrency,formatDate,getValorPago,getValorPendente } from '@/composables/useFaturacao';
+import type { ParcelaRead, PagamentoRequest, MetodoPagamento } from '@/types/fatura';
+import { useToast } from '@/components/ui/toast/use-toast';
 
 const props = defineProps<{
   open: boolean;
@@ -100,11 +115,14 @@ const emit = defineEmits<{
 
 // Composable
 const { pagarParcela, loading } = useFaturacao();
+const { toast } = useToast();
+
 
 // Estado do formulário
 const selectedParcelaId = ref<string>('');
 const valor = ref<number>(0);
 const dataPagamento = ref<string>(new Date().toISOString().split('T')[0]);
+const metodoPagamento = ref<MetodoPagamento | ''>('');
 const observacoes = ref<string>('');
 
 // Computed
@@ -113,7 +131,10 @@ const parcelasPendentes = computed(() => {
 });
 
 const isFormValid = computed(() => {
-  return valor.value > 0 && dataPagamento.value && selectedParcelaId.value;
+  return valor.value > 0 && 
+         dataPagamento.value && 
+         selectedParcelaId.value && 
+         metodoPagamento.value;
 });
 
 // Watchers
@@ -121,7 +142,7 @@ watch(() => selectedParcelaId.value, (newValue) => {
   if (newValue && newValue !== 'custom') {
     const parcela = parcelasPendentes.value.find(p => p.id.toString() === newValue);
     if (parcela) {
-      valor.value = parcela.valor;
+      valor.value = parcela.valor_planejado || parcela.valor_planejado || 0;
     }
   } else if (newValue === 'custom') {
     valor.value = 0;
@@ -140,6 +161,7 @@ const resetForm = () => {
   selectedParcelaId.value = '';
   valor.value = 0;
   dataPagamento.value = new Date().toISOString().split('T')[0];
+  metodoPagamento.value = '';
   observacoes.value = '';
 };
 
@@ -149,16 +171,40 @@ const handleSubmit = async () => {
   const pagamento: PagamentoRequest = {
     fatura_id: props.faturaId,
     parcela_id: selectedParcelaId.value !== 'custom' ? parseInt(selectedParcelaId.value) : undefined,
-    valor: valor.value,
+    valor_pago: valor.value,
     data_pagamento: dataPagamento.value,
+    metodo_pagamento: metodoPagamento.value as MetodoPagamento,
     observacoes: observacoes.value || undefined
   };
 
   try {
-    await pagarParcela(pagamento);
-    emit('payment-success');
-    resetForm();
+    const success = await pagarParcela(pagamento);
+    
+    if (success) {
+      // Show success toast
+      toast({
+        title: "Pagamento registrado com sucesso",
+        description: `Pagamento de ${formatCurrency(valor.value)} processado com sucesso.`,
+      });
+      
+      // Notify parent to refresh data
+      emit('payment-success');
+      resetForm();
+    } else {
+      // Show error toast for API failure
+      toast({
+        title: "Erro ao processar pagamento",
+        description: "Não foi possível registrar o pagamento. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   } catch (error) {
+    // Show error toast for exceptions
+    toast({
+      title: "Erro ao processar pagamento",
+      description: error instanceof Error ? error.message : "Ocorreu um erro inesperado",
+      variant: "destructive",
+    });
     console.error('Erro ao processar pagamento:', error);
   }
 };

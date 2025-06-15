@@ -68,6 +68,7 @@
         <FaturasDetail 
           v-if="selectedFatura"
           :fatura="selectedFatura"
+           @refresh="refreshFatura"
         />
         
         <DialogFooter>
@@ -131,10 +132,38 @@ const handlePay = async (faturaId: number) => {
   showPayment.value = true;
 };
 
-const handlePaymentSuccess = () => {
+const handlePaymentSuccess = async () => {
+  // Refresh all faturas to update the statistics at the top
+  await loadFaturas();
+  
+  // If a fatura is being viewed in the details modal, refresh it too
+  if (showDetails.value && selectedFatura.value) {
+    selectedFatura.value = await getFatura(selectedFatura.value.id);
+  }
+  
+  // If we were just paying for the currently selected fatura, refresh its data
+  if (selectedFaturaId.value) {
+    const updatedFatura = await getFatura(selectedFaturaId.value);
+    
+    // If the details modal is showing this fatura, update it there too
+    if (showDetails.value && selectedFatura.value?.id === selectedFaturaId.value) {
+      selectedFatura.value = updatedFatura;
+    }
+    
+    // Update parcelas in case we need them again
+    selectedParcelas.value = updatedFatura?.parcelas || [];
+  }
+  
+  // Close payment modal
   showPayment.value = false;
-  selectedFaturaId.value = null;
 };
+
+async function refreshFatura() {
+  if (selectedFaturaId.value) {
+    selectedFatura.value = await getFatura(selectedFaturaId.value);
+  }
+}
+
 
 // Lifecycle
 onMounted(() => {
