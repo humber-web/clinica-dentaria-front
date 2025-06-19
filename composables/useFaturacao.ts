@@ -35,18 +35,24 @@ export const formatDate = (dateString: string | null | undefined): string => {
     return "Erro ao formatar data";
   }
 };
-
 export const getValorPago = (fatura: FaturaRead): number => {
-  if (fatura.tipo === "consulta") {
-    // se for consulta única, só está pago se o estado for 'paga'
-    return fatura.estado === "paga" ? fatura.total : 0;
-  } else {
-    // se for plano, soma todas as parcelas pagas
-    return (fatura.parcelas ?? []).reduce(
-      (sum, p) => sum + (p.valor_pago ?? 0),
-      0
-    );
+  // Case 1: Invoice with direct payments
+  if (fatura.pagamentos && Array.isArray(fatura.pagamentos)) {
+    return fatura.pagamentos.reduce((sum, p) => sum + (p.valor || 0), 0);
   }
+  
+  // Case 2: Invoice with parcelas
+  else if (fatura.parcelas && Array.isArray(fatura.parcelas)) {
+    return fatura.parcelas.reduce((sum, p) => sum + (p.valor_pago || 0), 0);
+  }
+  
+  // Case 3: Simple invoice with estado="paga"
+  else if (fatura.estado === "paga") {
+    return fatura.total;
+  }
+  
+  // Case 4: No payment information available
+  return 0;
 };
 
 export const getValorPendente = (fatura: FaturaRead): number => {
@@ -265,27 +271,43 @@ export function useFaturacao() {
    * Processes payment of an installment
    */
 
+    /**
+   * Processes payment of an installment or direct payment to an invoice
+   */
   async function pagarParcela(pagamento: PagamentoRequest): Promise<boolean> {
     loading.value = true;
     error.value = null;
   
     try {
-      const parcelaId = pagamento.parcela_id;
-      
-      if (!parcelaId) {
-        throw new Error("ID da parcela não fornecido");
-      }
-      
-      // Create payload with required fields
-      const payload = {
-        valor_pago: pagamento.valor_pago,
-        metodo_pagamento: pagamento.metodo_pagamento,
-        data_pagamento: pagamento.data_pagamento,
-        observacoes: pagamento.observacoes
-      };
+      // Check if this is a direct payment to the invoice or payment to a parcela
+      if (pagamento.parcela_id) {
+        // Payment to a specific installment
+        const parcelaId = pagamento.parcela_id;
+        
+        // Create payload with required fields
+        const payload = {
+          valor_pago: pagamento.valor_pago,
+          metodo_pagamento: pagamento.metodo_pagamento,
+          data_pagamento: pagamento.data_pagamento,
+          observacoes: pagamento.observacoes
+        };
   
-      // Send payment request to API
-      await post(`faturas/parcelas/${parcelaId}/pagamento`, payload);
+        // Send payment request to API
+        await post(`faturas/parcelas/${parcelaId}/pagamento`, payload);
+      } else if (pagamento.fatura_id) {
+        // Direct payment to invoice (no parcela)
+        const payload = {
+          valor_pago: pagamento.valor_pago,
+          metodo_pagamento: pagamento.metodo_pagamento,
+          data_pagamento: pagamento.data_pagamento,
+          observacoes: pagamento.observacoes
+        };
+  
+        // Send direct payment request to API
+        await post(`faturas/${pagamento.fatura_id}/pagamento-direto`, payload);
+      } else {
+        throw new Error("Nem ID da parcela nem ID da fatura fornecidos");
+      }
       
       // Refresh the invoice to get updated status
       if (pagamento.fatura_id) {
@@ -295,44 +317,20 @@ export function useFaturacao() {
       return true;
     } catch (err) {
       error.value = err instanceof Error ? err.message : String(err);
-      console.error(`Erro ao pagar parcela:`, err);
+      console.error(`Erro ao processar pagamento:`, err);
       return false;
     } finally {
       loading.value = false;
     }
   }
+
   const estatisticas = computed(() => {
     const total = faturas.value.reduce((sum, f) => sum + f.total, 0);
-    const pago = faturas.value.reduce((sum, f) => {
-      // If 'pago' exists, use it; otherwise, sum paid parcelas if available, else 0
-      if ("pago" in f && typeof (f as any).pago === "number") {
-        return sum + (f as any).pago;
-      } else if ("parcelas" in f && Array.isArray((f as any).parcelas)) {
-        // Sum the valor_pago of each parcela if available
-        return (
-          sum +
-          (f as any).parcelas.reduce(
-            (pSum: number, parcela: any) => pSum + (parcela.valor_pago ?? 0),
-            0
-          )
-        );
-      } else {
-        return sum;
-      }
-    }, 0);
-    const pendente = faturas.value.reduce((sum, f) => {
-      let pago = 0;
-      if ("pago" in f && typeof (f as any).pago === "number") {
-        pago = (f as any).pago;
-      } else if ("parcelas" in f && Array.isArray((f as any).parcelas)) {
-        pago = (f as any).parcelas.reduce(
-          (pSum: number, parcela: any) => pSum + (parcela.valor_pago ?? 0),
-          0
-        );
-      }
-      return sum + (f.total - pago);
-    }, 0);
-
+    
+    const pago = faturas.value.reduce((sum, f) => sum + getValorPago(f), 0);
+    
+    const pendente = faturas.value.reduce((sum, f) => sum + (f.total - getValorPago(f)), 0);
+  
     return {
       total,
       pago,

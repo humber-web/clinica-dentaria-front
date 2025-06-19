@@ -168,12 +168,15 @@ const resetForm = () => {
 const handleSubmit = async () => {
   if (!props.faturaId || !isFormValid.value) return;
 
+  // Determine if this is a direct payment or installment payment
+  const isDirectPayment = selectedParcelaId.value === 'custom' || !selectedParcelaId.value;
+
   const pagamento: PagamentoRequest = {
     fatura_id: props.faturaId,
-    parcela_id: selectedParcelaId.value !== 'custom' ? parseInt(selectedParcelaId.value) : undefined,
+    parcela_id: isDirectPayment ? undefined : parseInt(selectedParcelaId.value),
     valor_pago: valor.value,
-    data_pagamento: dataPagamento.value,
     metodo_pagamento: metodoPagamento.value as MetodoPagamento,
+    data_pagamento: dataPagamento.value,
     observacoes: observacoes.value || undefined
   };
 
@@ -189,9 +192,14 @@ const handleSubmit = async () => {
       
       // Notify parent to refresh data
       emit('payment-success');
+      
+      // Reset form
       resetForm();
+      
+      // Close modal (optional - depends on your UX preference)
+      emit('close');
     } else {
-      // Show error toast for API failure
+      // Show error toast
       toast({
         title: "Erro ao processar pagamento",
         description: "Não foi possível registrar o pagamento. Tente novamente.",
@@ -199,13 +207,14 @@ const handleSubmit = async () => {
       });
     }
   } catch (error) {
-    // Show error toast for exceptions
+    console.error('Erro ao processar pagamento:', error);
+    
+    // Show error toast
     toast({
       title: "Erro ao processar pagamento",
       description: error instanceof Error ? error.message : "Ocorreu um erro inesperado",
       variant: "destructive",
     });
-    console.error('Erro ao processar pagamento:', error);
   }
 };
 </script>

@@ -21,8 +21,11 @@ export function useDoctorDashboard(
       // Get all consultations for this doctor in this clinic
       const consultas = await fetchConsultas(clinic.id, loggedUser.id);
 
-      // Find any consultation with estado="iniciada"
-      const active = consultas.find((c: { estado: string; }) => c.estado === "iniciada");
+      // Find any consultation with estado="iniciada" or "em_andamento"
+      const active = consultas.find(
+        (c: { estado: string }) =>
+          c.estado === "iniciada" || c.estado === "em_andamento"
+      );
       activeConsultation.value = active || null;
 
       return active;
@@ -34,8 +37,15 @@ export function useDoctorDashboard(
 
   const proximasConsultas = computed(() =>
     events.value
-      .filter((e) => e.medico_id === loggedUser?.id)
-      .sort((a, b) => a.start.getTime() + b.start.getTime())
+      .filter((e) => 
+        // Filter by doctor
+        e.medico_id === loggedUser?.id && 
+        // Only include consultations that are pending or scheduled
+        (e.estado === "agendada" || e.estado === "iniciada") &&
+        // Only include future consultations
+        e.start.getTime() > Date.now()
+      )
+      .sort((a, b) => a.start.getTime() - b.start.getTime())
       .slice(0, 1)
   );
 

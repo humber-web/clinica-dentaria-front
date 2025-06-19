@@ -451,49 +451,65 @@ async function finalizarConsulta() {
     if (resultado) {
       await getConsulta(consultaId);
 
-      // Use the existing planoAtivo data - no need to fetch again
-      const temPlanoAtivo = planoAtivo.value && "id" in planoAtivo.value;
-
       try {
         const { createFatura } = useFaturacao();
+        const { getRecentCompletedPlan } = usePlanos();
         let fatura;
 
-        if (temPlanoAtivo && planoAtivo.value?.id) {
-          // Create invoice for the plan
-          const planoId = planoAtivo.value.id;
+        const temPlanoAtivo = planoAtivo.value && "id" in planoAtivo.value;
+        
+        let planoRecemConcluido = null;
+        if (!temPlanoAtivo) {
+          planoRecemConcluido = await getRecentCompletedPlan(pacienteId);
+        }
 
-          const faturaPayload = {
+        if (temPlanoAtivo && planoAtivo.value?.id) {
+          const planoId = planoAtivo.value.id;
+          fatura = await createFatura({
             paciente_id: pacienteId,
             tipo: "plano" as const,
             consulta_id: null,
             plano_id: planoId,
-          };
-
-          fatura = await createFatura(faturaPayload);
-        } else {
+          });
+          
+          toast({
+            title: "Sucesso",
+            description: `Consulta concluída e fatura gerada para o plano ativo #${planoId}`,
+          });
+        } 
+        else if (planoRecemConcluido) {
+          // Create invoice for recently completed plan
+          fatura = await createFatura({
+            paciente_id: pacienteId,
+            tipo: "plano" as const,
+            consulta_id: null,
+            plano_id: planoRecemConcluido.id,
+          });
+          
+          toast({
+            title: "Sucesso",
+            description: `Consulta concluída e fatura gerada para o plano recém-concluído #${planoRecemConcluido.id}`,
+          });
+        } 
+        else {
           // Create invoice for the consultation
-          const faturaPayload = {
+          fatura = await createFatura({
             paciente_id: pacienteId,
             tipo: "consulta" as const,
             consulta_id: consultaId,
             plano_id: null,
-          };
-
-          fatura = await createFatura(faturaPayload);
-        }
-
-        if (fatura) {
+          });
+          
           toast({
             title: "Sucesso",
-            description: `Consulta concluída e fatura de ${
-              temPlanoAtivo ? "plano" : "consulta"
-            } gerada com sucesso`,
+            description: "Consulta concluída e fatura de consulta gerada com sucesso",
           });
-        } else {
+        }
+
+        if (!fatura) {
           toast({
             title: "Atenção",
-            description:
-              "Consulta concluída, mas não foi possível gerar a fatura automaticamente",
+            description: "Consulta concluída, mas não foi possível gerar a fatura automaticamente",
             variant: "default",
           });
         }
@@ -502,8 +518,7 @@ async function finalizarConsulta() {
 
         toast({
           title: "Atenção",
-          description:
-            "Consulta concluída, mas houve um erro ao gerar a fatura",
+          description: "Consulta concluída, mas houve um erro ao gerar a fatura",
           variant: "default",
         });
       }

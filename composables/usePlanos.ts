@@ -95,7 +95,7 @@ export function usePlanos() {
       // Send consulta_id as query parameter instead of in the request body
       const data = await post(
         `pacientes/planos/itens/${planoItemId}/start?consulta_id=${consultaId}`,
-        {} 
+        {}
       );
 
       if (planoAtivo.value) {
@@ -120,6 +120,38 @@ export function usePlanos() {
       loadingPlano.value = false;
     }
   }
+  async function getRecentlyCompletedPlans(
+    pacienteId: number,
+    hours: number = 1
+  ): Promise<PlanoTratamento[]> {
+    loadingPlano.value = true;
+    error.value = null;
+
+    try {
+      const response = await get(
+        `/planos/completed?paciente_id=${pacienteId}&hours=${hours}`
+      );
+      return response || [];
+    } catch (err) {
+      console.error("Erro ao buscar planos recentemente concluídos:", err);
+      error.value = err instanceof Error ? err.message : String(err);
+      return [];
+    } finally {
+      loadingPlano.value = false;
+    }
+  }
+
+  async function getRecentCompletedPlan(
+    pacienteId: number
+  ): Promise<PlanoTratamento | null> {
+    try {
+      const recentPlans = await getRecentlyCompletedPlans(pacienteId, 1);
+      return recentPlans.length > 0 ? recentPlans[0] : null;
+    } catch (err) {
+      console.error("Erro ao verificar plano recentemente concluído:", err);
+      return null;
+    }
+  }
 
   return {
     planos,
@@ -131,6 +163,7 @@ export function usePlanos() {
     fetchPlanosPaciente,
     getPlano,
     startProcedimento,
-    // Add other functions as needed (create, update, delete)
+    getRecentlyCompletedPlans,
+    getRecentCompletedPlan,
   };
 }

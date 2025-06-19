@@ -71,6 +71,7 @@
           </div>
           <Button
             class="w-full"
+            :disabled="!proximaConsulta.start && !activeConsultation"
             @click="handleConsultaAction"
             :variant="activeConsultation ? 'default' : 'secondary'"
           >
@@ -303,7 +304,7 @@ const {
     estatisticas: ref({}),
     pacientes: ref([]),
     activeConsultation: ref(null),
-    fetchActiveConsultation: async () => null,
+    fetchActiveConsultation: async (): Promise<null> => null,
   };
 }).value;
 
