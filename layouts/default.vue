@@ -28,7 +28,14 @@ const breadcrumbMap: Record<string, string> = {
   "/doctor/settings": "Definições",
 
 
-  // add more as needed
+  // front desk Section Breadcrumbs
+  "/frontdesk": "Início",
+  "/frontdesk/marcacoes": "Agenda",
+  "/frontdesk/search": "Pesquisar",
+  "/frontdesk/settings": "Definições",
+  "/frontdesk/patients": "Pacientes",
+  "/frontdesk/orcamentos": "Orcamentos",
+  "/pacient": "Pacientes",
 };
 
 const mainSection = computed(() => {
@@ -37,6 +44,7 @@ const mainSection = computed(() => {
   if (route.path.match(/^\/master\/clinic\/\d+/)) return "/master/clinics";
   if (route.path.startsWith("/master/users")) return "/master/users";
   if (route.path.match(/^\/master\/patient\/\d+$/)) return "/master/patients";
+   if (route.path.match(/^\/frontdesk\/patient\/\d+$/)) return "/frontdesk/patients";
   if (route.path.startsWith("/master/patients")) return "/master/patients";
   return route.path;
 });
@@ -48,6 +56,7 @@ const mainBreadcrumbText = computed(
 const subpageBreadcrumbText = computed(() => {
   if (route.path.match(/^\/master\/clinic\/\d+\/settings/)) return 'Configurações'
   if (route.path.match(/^\/master\/patient\/\d+$/)) return 'Detalhes'
+  if (route.path.match(/^\/frontdesk\/patient\/\d+$/)) return 'Detalhes'
   return ''
 })
 </script>

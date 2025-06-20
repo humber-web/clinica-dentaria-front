@@ -36,6 +36,9 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       if (to.path.startsWith('/diretor') && perfil !== 'gerente' && perfil !== 'diretor') {
         return navigateTo('/')
       }
+       if (to.path.startsWith('/frontdesk') && perfil !== 'frontdesk') {
+        return navigateTo('/')
+      }
       if (to.path.startsWith('/assistant') && perfil !== 'assistant') {
         return navigateTo('/')
       }

@@ -324,18 +324,45 @@ export function useFaturacao() {
     }
   }
 
-  const estatisticas = computed(() => {
-    const total = faturas.value.reduce((sum, f) => sum + f.total, 0);
+   const estatisticas = computed(() => {
+    // Filter out canceled invoices first
+    const activeFaturas = faturas.value.filter(f => f.estado !== "cancelada");
     
-    const pago = faturas.value.reduce((sum, f) => sum + getValorPago(f), 0);
+    // Total value of all active invoices
+    const total = activeFaturas.reduce((sum, f) => sum + f.total, 0);
     
-    const pendente = faturas.value.reduce((sum, f) => sum + (f.total - getValorPago(f)), 0);
+    // Total amount paid across all invoices
+    const pago = activeFaturas.reduce((sum, f) => sum + getValorPago(f), 0);
+    
+    // Total amount still pending payment
+    const pendente = activeFaturas.reduce((sum, f) => sum + getValorPendente(f), 0);
+    
+    // Count of invoices by status
+    const countsByStatus = activeFaturas.reduce((counts, f) => {
+      counts[f.estado] = (counts[f.estado] || 0) + 1;
+      return counts;
+    }, {} as Record<FaturaEstado, number>);
+    
+    // Count of invoices with parcelas
+    const comParcelas = activeFaturas.filter(f => 
+      f.parcelas && f.parcelas.length > 0
+    ).length;
+    
+    // Count of invoices with direct payments
+    const comPagamentosDiretos = activeFaturas.filter(f => 
+      f.pagamentos && f.pagamentos.length > 0
+    ).length;
   
     return {
       total,
       pago,
       pendente,
-      quantidade: faturas.value.length,
+      quantidade: activeFaturas.length,
+      pendentes: countsByStatus.pendente || 0,
+      parciais: countsByStatus.parcial || 0,
+      pagas: countsByStatus.paga || 0,
+      comParcelas,
+      comPagamentosDiretos
     };
   });
 

@@ -40,6 +40,10 @@ const isDoctorContext = computed(() => {
   return route.path.includes('/doctor/');
 });
 
+const isFrontdeskContext = computed(() => {
+  return route.path.includes('/frontdesk/');
+});
+
 const consultaId = computed(() => {
   return route.query.consulta_id ? Number(route.query.consulta_id) : null;
 });
@@ -222,6 +226,9 @@ function redirectToOrcamentoEdit(orcamentoId: number) {
         `/master/orcamentos/${orcamentoId}/edit?patient_id=${props.pacienteId}&source=doctor_patient`
       );
     }
+  } else if (isFrontdeskContext.value) {
+    // If in frontdesk context
+    router.push(`/frontdesk/orcamentos/${orcamentoId}/edit?patient_id=${props.pacienteId}`);
   } else {
     // Standard master navigation
     router.push(

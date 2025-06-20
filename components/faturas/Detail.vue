@@ -82,10 +82,12 @@
             <TableHeader>
               <TableRow>
                 <TableHead>Parcela</TableHead>
-                <TableHead class="text-right">Valor</TableHead>
+                <TableHead class="text-right">Valor Previsto</TableHead>
+                <TableHead class="text-right">Valor Pago</TableHead>
                 <TableHead>Vencimento</TableHead>
                 <TableHead>Pagamento</TableHead>
                 <TableHead>Estado</TableHead>
+                <!-- <TableHead>Ações</TableHead> -->
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -96,6 +98,9 @@
                 <TableCell> {{ parcela.numero }}ª parcela </TableCell>
                 <TableCell class="text-right">
                   {{ formatCurrency(parcela.valor_planejado) }}
+                </TableCell>
+                <TableCell class="text-right">
+                  {{ formatCurrency(parcela.valor_pago || 0) }}
                 </TableCell>
                 <TableCell>
                   {{ formatDate(parcela.data_vencimento) }}
@@ -114,6 +119,16 @@
                     {{ getParcelaEstadoLabel(parcela.estado) }}
                   </Badge>
                 </TableCell>
+                <!-- <TableCell>
+                  <Button 
+                    v-if="parcela.estado !== 'paga'"
+                    size="sm" 
+                    variant="outline" 
+                    @click="handlePayParcela(parcela)"
+                  >
+                    Pagar
+                  </Button>
+                </TableCell> -->
               </TableRow>
             </TableBody>
           </Table>
@@ -152,38 +167,95 @@
       </CardContent>
     </Card>
 
-    <!-- Resumo financeiro -->
-    <Card>
+    <!-- Pagamentos diretos -->
+    <Card v-if="localFatura.pagamentos && localFatura.pagamentos.length > 0">
       <CardHeader>
-        <CardTitle>Resumo Financeiro</CardTitle>
+        <CardTitle>Pagamentos Diretos</CardTitle>
       </CardHeader>
       <CardContent>
-        <div class="grid grid-cols-3 gap-4">
-          <div class="text-center p-4 bg-muted/50 rounded-lg">
-            <p class="text-2xl font-bold">
-              {{ formatCurrency(localFatura.total) }}
-            </p>
-            <p class="text-sm text-muted-foreground">Valor Total</p>
-          </div>
-          <div
-            class="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg"
-          >
-            <p class="text-2xl font-bold text-green-600">
-              {{ formatCurrency(getValorPago(localFatura)) }}
-            </p>
-            <p class="text-sm text-muted-foreground">Valor Pago</p>
-          </div>
-          <div
-            class="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg"
-          >
-            <p class="text-2xl font-bold text-orange-600">
-              {{ formatCurrency(getValorPendente(localFatura)) }}
-            </p>
-            <p class="text-sm text-muted-foreground">Valor Pendente</p>
-          </div>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Data</TableHead>
+              <TableHead class="text-right">Valor</TableHead>
+              <TableHead>Método</TableHead>
+              <TableHead>Observações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow
+              v-for="pagamento in localFatura.pagamentos"
+              :key="pagamento.id"
+            >
+              <TableCell>{{ formatDate(pagamento.data_pagamento) }}</TableCell>
+              <TableCell class="text-right">
+                {{ formatCurrency(pagamento.valor) }}
+              </TableCell>
+              <TableCell>{{ getMetodoPagamentoLabel(pagamento.metodo_pagamento) }}</TableCell>
+              <TableCell>{{ pagamento.observacoes || "-" }}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
+
+    <!-- Resumo financeiro -->
+    <Card>
+    <CardHeader>
+      <CardTitle>Resumo Financeiro</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="text-center p-4 bg-muted/50 rounded-lg">
+          <p class="text-2xl font-bold">
+            {{ formatCurrency(localFatura.total) }}
+          </p>
+          <p class="text-sm text-muted-foreground">Valor Total</p>
+        </div>
+        <div
+          class="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg"
+        >
+          <p class="text-2xl font-bold text-green-600">
+            {{ formatCurrency(totalPago) }}
+          </p>
+          <p class="text-sm text-muted-foreground">Valor Pago</p>
+          <div class="mt-1 text-xs">
+            <span v-if="valorPagoParcelas > 0 && valorPagoDireto > 0">
+              {{ formatCurrency(valorPagoParcelas) }} parcelas + {{ formatCurrency(valorPagoDireto) }} direto
+            </span>
+            <span v-else-if="valorPagoParcelas > 0">
+              {{ formatCurrency(valorPagoParcelas) }} via parcelas
+            </span>
+            <span v-else-if="valorPagoDireto > 0">
+              {{ formatCurrency(valorPagoDireto) }} pagamento direto
+            </span>
+          </div>
+        </div>
+        <div
+          class="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg"
+        >
+          <p class="text-2xl font-bold text-orange-600">
+            {{ formatCurrency(valorPendente) }}
+          </p>
+          <p class="text-sm text-muted-foreground">Valor Pendente</p>
+          <div class="mt-1 text-xs" v-if="valorPendente > 0">
+            {{ percentualPendente }}% do total
+          </div>
+        </div>
+        <div
+          class="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg"
+        >
+          <p class="text-2xl font-bold text-blue-600">
+            {{ parcelasStats.pendentes + parcelasStats.parciais }}
+          </p>
+          <p class="text-sm text-muted-foreground">Parcelas Pendentes</p>
+          <div class="mt-1 text-xs" v-if="parcelasStats.total > 0">
+            {{ parcelasStats.pendentes }} pendentes, {{ parcelasStats.parciais }} parciais
+          </div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
   </div>
 </template>
 
@@ -195,47 +267,98 @@ import {
   getValorPendente,
   useFaturacao,
 } from "@/composables/useFaturacao";
-import type { FaturaRead } from "@/types/fatura";
+import type { FaturaRead, ParcelaRead } from "@/types/fatura";
 import { useToast } from "@/components/ui/toast/use-toast";
 
 // Props
 const props = defineProps<{ fatura: FaturaRead }>();
 const emit = defineEmits<{
   (e: "refresh"): void;
+  (e: "pay-parcela", parcela: ParcelaRead): void;
 }>();
 const { toast } = useToast();
 
+// Formatters and labels
 const getTipoLabel = (t: string) =>
-  ({ consulta: "Consulta", tratamento: "Tratamento", orcamento: "Orçamento" }[
-    t
-  ] || t);
+  ({ consulta: "Consulta", plano: "Plano de Tratamento" }[t] || t);
+
 const getTipoBadgeVariant = (t: string) =>
-  ({ consulta: "secondary", tratamento: "default", orcamento: "outline" }[
-    t
-  ] as any);
+  ({ consulta: "secondary", plano: "default" }[t] as any);
+
 const getEstadoLabel = (e: string) =>
   ({
     pendente: "Pendente",
-    pago: "Pago",
+    paga: "Pago",
     parcial: "Parcial",
-    vencido: "Vencido",
+    cancelada: "Cancelada",
   }[e] || e);
+
 const getEstadoBadgeVariant = (e: string) =>
   ({
     pendente: "secondary",
-    pago: "default",
+    paga: "default",
     parcial: "outline",
-    vencido: "destructive",
+    cancelada: "destructive",
   }[e] as any);
+
 const getParcelaEstadoLabel = (e: string) =>
-  ({ pendente: "Pendente", pago: "Pago", vencido: "Vencido" }[e] || e);
+  ({ pendente: "Pendente", paga: "Paga", parcial: "Parcial" }[e] || e);
+
 const getParcelaEstadoBadgeVariant = (e: string) =>
-  ({ pendente: "secondary", pago: "default", vencido: "destructive" }[
-    e
-  ] as any);
+  ({ pendente: "secondary", paga: "default", parcial: "outline" }[e] as any);
+
+const getMetodoPagamentoLabel = (m: string) =>
+  ({ 
+    dinheiro: "Dinheiro", 
+    cartao: "Cartão", 
+    transferencia: "Transferência" 
+  }[m] || m);
 
 // Local state
 const localFatura = ref<FaturaRead>(props.fatura);
+
+// Enhanced statistics calculations
+const valorPagoParcelas = computed(() => {
+  if (!localFatura.value?.parcelas?.length) return 0;
+  
+  // Sum all valor_pago values, ensuring null/undefined values are treated as 0
+  return localFatura.value.parcelas.reduce((sum, p) => {
+    const valorPago = p.valor_pago !== null && p.valor_pago !== undefined ? p.valor_pago : 0;
+    return sum + valorPago;
+  }, 0);
+});
+
+const valorPagoDireto = computed(() => {
+  if (!localFatura.value?.pagamentos?.length) return 0;
+  
+  return localFatura.value.pagamentos.reduce((sum, p) => {
+    const valor = p.valor !== null && p.valor !== undefined ? p.valor : 0;
+    return sum + valor;
+  }, 0);
+});
+
+const totalPago = computed(() => valorPagoParcelas.value + valorPagoDireto.value);
+
+const percentualPendente = computed(() => {
+  if (localFatura.value.total <= 0) return 0;
+  return Math.round((getValorPendente(localFatura.value) / localFatura.value.total) * 100);
+});
+
+
+const valorPendente = computed(() => {
+  const total = localFatura.value.total || 0;
+  return Math.max(0, total - totalPago.value);
+});
+
+const parcelasStats = computed(() => {
+  const parcelas = localFatura.value?.parcelas || [];
+  return {
+    total: parcelas.length,
+    pagas: parcelas.filter(p => p.estado === 'paga').length,
+    parciais: parcelas.filter(p => p.estado === 'parcial').length,
+    pendentes: parcelas.filter(p => p.estado === 'pendente').length
+  };
+});
 
 const lastParcelaDate = computed(() => {
   if (!localFatura.value?.parcelas?.length) return "";
@@ -283,6 +406,11 @@ const canGenerateParcelas = computed(
 
 // composable call
 const { generateParcelas, getFatura } = useFaturacao();
+
+// handle pay parcela
+function handlePayParcela(parcela: ParcelaRead) {
+  emit('pay-parcela', parcela);
+}
 
 // on click → generate + reload fatura
 async function onGenerateParcelas() {

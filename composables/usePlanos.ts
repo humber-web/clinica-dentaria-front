@@ -129,7 +129,7 @@ export function usePlanos() {
 
     try {
       const response = await get(
-        `/planos/completed?paciente_id=${pacienteId}&hours=${hours}`
+        `pacientes/planos/completed?paciente_id=${pacienteId}&hours=${hours}`
       );
       return response || [];
     } catch (err) {

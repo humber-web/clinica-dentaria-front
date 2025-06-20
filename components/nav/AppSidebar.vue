@@ -13,6 +13,7 @@ import {
   ClipboardList,
   BarChart2,
   Receipt,
+  Wallet
 } from "lucide-vue-next";
 
 // Tipagem para os itens do menu
@@ -139,19 +140,17 @@ const menuConfigurations: MenuConfigurations = {
     { title: "Relatórios", url: "/doctor/reports", icon: TrendingUp },
     { title: "Definições", url: "/doctor/settings", icon: Settings },
   ],
+  frontdesk: [
+    { title: "Início", url: "/frontdesk", icon: Home },
+    { title: "Agenda", url: "/frontdesk/marcacoes", icon: Calendar },
+    { title: "Orcamentos", url: "/frontdesk/orcamentos", icon: Receipt },
+    { title: "Pacientes", url: "/frontdesk/patients", icon: Users },
+    { title: "Caixa", url: "/frontdesk/caixa", icon: Wallet },
+  ],
   assistant: [
-    {
-      title: "Início",
-      url: "/assistant",
-      icon: Home,
-      children: [
-        { title: "Resumo", url: "/assistant/overview" },
-        { title: "Equipa", url: "/assistant/team" },
-      ],
-    },
-    { title: "Agenda", url: "/assistant/agenda", icon: Calendar },
+    { title: "Início", url: "/assistant", icon: Home },
+    { title: "Agenda", url: "/assistant/marcacoes", icon: Calendar },
     { title: "Pesquisar", url: "/assistant/search", icon: Search },
-    { title: "Definições", url: "/assistant/settings", icon: Settings },
   ],
   // Adicione outros perfis conforme necessário
 };
