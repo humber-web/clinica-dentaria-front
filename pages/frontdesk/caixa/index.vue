@@ -5,7 +5,7 @@
       <div>
         <h1 class="text-3xl font-bold">Caixa do Dia</h1>
         <p class="text-muted-foreground">
-          {{ session ? `Sessão aberta em ${formatDateTime(session.data_abertura)}` : 'Nenhuma sessão ativa' }}
+          {{ session ? `Sessão aberto em ${formatDateTime(session.data_inicio)}` : 'Nenhuma sessão ativa' }}
         </p>
       </div>
       
@@ -20,7 +20,7 @@
         </Button>
         
         <Button 
-          v-if="session && session.status === 'aberta'" 
+          v-if="session && session.status === 'aberto'" 
           @click="showCloseModal = true"
           variant="destructive"
         >
@@ -47,7 +47,13 @@
         @pay-invoice="handlePayInvoice"
         @pay-parcela="handlePayParcela"
       />
+       <!-- <CaixaPaymentHistory
+       :payments="session.payments" -->
+    
+    />
     </div>
+
+   
 
     <!-- No Session State -->
     <Card v-else class="p-8 text-center">
@@ -93,13 +99,6 @@
 
 <script setup lang="ts">
 import { PlusIcon, XIcon, WalletMinimal } from 'lucide-vue-next';
-
-// Page meta
-definePageMeta({
-  title: 'Caixa do Dia',
-  layout: 'default'
-});
-
 // Composable
 const { 
   session, 
@@ -137,6 +136,7 @@ const handleSessionOpened = async () => {
 const handleSessionClosed = () => {
   showCloseModal.value = false;
   // Optionally navigate away or refresh
+  fetchOpenSession();
 };
 
 const handlePayInvoice = (invoiceId: number) => {
@@ -145,28 +145,35 @@ const handlePayInvoice = (invoiceId: number) => {
     paymentTarget.value = {
       type: 'fatura',
       id: invoiceId,
-      amount: invoice.valor_pendente,
-      clientName: invoice.cliente_nome
+      amount: invoice.pendente,
+      clientName: invoice.paciente_nome
     };
     showPaymentModal.value = true;
   }
 };
 
 const handlePayParcela = (parcelaId: number) => {
-  const parcela = pendingParcels.value.find(parc => parc.id === parcelaId);
+  const parcela = pendingParcels.value.find(parc => parc.parcela_id === parcelaId);
   if (parcela) {
     paymentTarget.value = {
       type: 'parcela',
       id: parcelaId,
-      amount: parcela.valor_pendente,
-      clientName: parcela.cliente_nome
+      amount: parcela.pendente,
+      clientName: parcela.paciente_nome
     };
     showPaymentModal.value = true;
   }
 };
 
-const handlePaymentSuccess = () => {
+const handlePaymentSuccess = async () => {
   showPaymentModal.value = false;
+  
+  if (session.value) {
+    await Promise.all([
+      fetchOpenSession(),
+      fetchPending(session.value.id)
+    ]);
+  }
 };
 
 // Lifecycle

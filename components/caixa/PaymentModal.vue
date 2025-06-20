@@ -112,7 +112,6 @@
           <Button 
             type="submit" 
             :disabled="loading || !isFormValid"
-            class="bg-green-600 hover:bg-green-700"
           >
             <div v-if="loading" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
             Confirmar Pagamento
@@ -124,7 +123,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
 import { BanknoteIcon, CreditCardIcon, ArrowRightLeftIcon } from 'lucide-vue-next';
 import { 
   Dialog, 

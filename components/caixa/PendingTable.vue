@@ -14,9 +14,9 @@
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nº</TableHead>
+                <TableHead>Nº Fatura</TableHead>
                 <TableHead>Emissão</TableHead>
-                <TableHead>Cliente</TableHead>
+                <TableHead>Paciente</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead class="text-right">Valor Total</TableHead>
                 <TableHead class="text-right">Valor Pendente</TableHead>
@@ -30,24 +30,25 @@
                 </TableCell>
               </TableRow>
               <TableRow v-for="invoice in pendingInvoices" :key="invoice.id">
-                <TableCell class="font-medium">{{ invoice.numero }}</TableCell>
+                <TableCell class="font-medium">{{ invoice.id }}</TableCell>
                 <TableCell>{{ formatDate(invoice.data_emissao) }}</TableCell>
-                <TableCell>{{ invoice.cliente_nome }}</TableCell>
+                <TableCell>{{ invoice.paciente_nome }}</TableCell>
                 <TableCell>
                   <Badge :variant="invoice.tipo === 'consulta' ? 'secondary' : 'default'">
                     {{ invoice.tipo === 'consulta' ? 'Consulta' : 'Tratamento' }}
                   </Badge>
                 </TableCell>
-                <TableCell class="text-right">{{ formatCurrency(invoice.valor_total) }}</TableCell>
-                <TableCell class="text-right font-medium">{{ formatCurrency(invoice.valor_pendente) }}</TableCell>
+                <TableCell class="text-right">{{ formatCurrency(invoice.total) }}</TableCell>
+                <TableCell class="text-right font-medium">{{ formatCurrency(invoice.pendente) }}</TableCell>
                 <TableCell class="text-center">
                   <Button
                     size="sm"
                     @click="$emit('pay-invoice', invoice.id)"
-                    class="bg-green-600 hover:bg-green-700"
+                    :disabled="invoice.pendente <= 0"
+                    :variant="invoice.pendente <= 0 ? 'outline' : 'default'"
                   >
-                    <CreditCardIcon class="w-4 h-4 mr-1" />
-                    Pagar
+                   <CreditCardIcon class="w-4 h-4 mr-1" />
+                    {{ invoice.pendente <= 0 ? 'Pago' : 'Pagar' }}
                   </Button>
                 </TableCell>
               </TableRow>
@@ -72,7 +73,7 @@
             <TableHeader>
               <TableRow>
                 <TableHead>Nº Fatura</TableHead>
-                <TableHead>Cliente</TableHead>
+                <TableHead>Paciente</TableHead>
                 <TableHead>Parcela</TableHead>
                 <TableHead>Vencimento</TableHead>
                 <TableHead class="text-right">Valor</TableHead>
@@ -86,11 +87,11 @@
                   Nenhuma parcela pendente
                 </TableCell>
               </TableRow>
-              <TableRow v-for="parcela in pendingParcels" :key="parcela.id">
-                <TableCell class="font-medium">{{ parcela.fatura_numero }}</TableCell>
-                <TableCell>{{ parcela.cliente_nome }}</TableCell>
+              <TableRow v-for="parcela in pendingParcels" :key="parcela.parcela_id">
+                <TableCell class="font-medium">{{ parcela.fatura_id }}</TableCell>
+                <TableCell>{{ parcela.paciente_nome }}</TableCell>
                 <TableCell>
-                  <Badge variant="outline">{{ parcela.parcela_numero }}ª parcela</Badge>
+                  <Badge variant="outline">{{ parcela.numero }}ª parcela</Badge>
                 </TableCell>
                 <TableCell>
                   <span :class="isOverdue(parcela.data_vencimento) ? 'text-red-600 font-medium' : ''">
@@ -101,16 +102,17 @@
                   </span>
                 </TableCell>
                 <TableCell class="text-right">{{ formatCurrency(parcela.valor) }}</TableCell>
-                <TableCell class="text-right font-medium">{{ formatCurrency(parcela.valor_pendente) }}</TableCell>
+                <TableCell class="text-right font-medium">{{ formatCurrency(parcela.pendente) }}</TableCell>
                 <TableCell class="text-center">
-                  <Button
+                 <Button
                     size="sm"
-                    @click="$emit('pay-parcela', parcela.id)"
-                    :variant="isOverdue(parcela.data_vencimento) ? 'destructive' : 'default'"
-                    class="bg-green-600 hover:bg-green-700"
+                    @click="$emit('pay-parcela', parcela.parcela_id)"
+                    :disabled="parcela.pendente <= 0"
+                    :variant="parcela.pendente <= 0 ? 'outline' : 
+                              isOverdue(parcela.data_vencimento) ? 'destructive' : 'default'"
                   >
                     <CreditCardIcon class="w-4 h-4 mr-1" />
-                    Pagar
+                    {{ parcela.pendente <= 0 ? 'Pago' : 'Pagar' }}
                   </Button>
                 </TableCell>
               </TableRow>

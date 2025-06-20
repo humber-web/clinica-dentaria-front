@@ -1,50 +1,52 @@
-export interface CashierSession {
-  id: number;
-  data_abertura: string;
-  data_fechamento?: string;
-  valor_inicial: number;
-  valor_final?: number;
-  usuario_id: number;
-  usuario_nome: string;
-  status: 'aberta' | 'fechada';
+export interface SessionResponse {
+  session: CashierSession;
+  payments: {
+    count: number;
+    total: number;
+    by_method: Record<string, { count: number; total: number }>;
+    history?: CashierPayment[];
+  };
 }
 
-export interface PaymentMethod {
-  id: string;
-  label: string;
-  icon: string;
+export interface CashierSession {
+  id: number;
+  data_inicio: string;
+  valor_inicial: number;
+  status: string;
+  operador_id: number;
+  operador_nome: string;
+  valor_final?: number;
+  data_fecho?: string;
 }
 
 export interface CashierPayment {
   id: number;
-  session_id: number;
-  target_type: 'fatura' | 'parcela';
-  target_id: number;
-  valor_pago: number;
-  metodo_pagamento: 'dinheiro' | 'cartao' | 'transferencia';
-  data_pagamento: string;
-  observacoes?: string;
-  created_at: string;
+  valor: number;
+  metodo_pagamento: string;
+  data: string;
+  paciente_nome: string | null;
+  fatura_id: number | null;
+  parcela_id: number | null;
 }
 
 export interface PendingInvoice {
   id: number;
   numero: string;
   data_emissao: string;
-  cliente_nome: string;
-  valor_total: number;
-  valor_pendente: number;
-  tipo: 'consulta' | 'tratamento';
+  paciente_nome: string;
+  total: number;
+  pendente: number;
+  tipo: string;
 }
 
 export interface PendingParcel {
-  id: number;
-  fatura_numero: string;
-  parcela_numero: number;
-  data_vencimento: string;
+  parcela_id: number;
+  fatura_id: number;
+  numero: number;
   valor: number;
-  valor_pendente: number;
-  cliente_nome: string;
+  pendente: number;
+  data_vencimento: string;
+  paciente_nome: string;
 }
 
 export interface CashierSummary {
@@ -52,6 +54,17 @@ export interface CashierSummary {
   totalDinheiro: number;
   totalCartao: number;
   totalTransferencia: number;
+  totalMBWay: number;
+  totalMultibanco: number;
+  totalCheque: number;
   totalRecebido: number;
   saldoEsperado: number;
+  // Payment counts
+  countDinheiro: number;
+  countCartao: number;
+  countTransferencia: number;
+  countMBWay: number;
+  countMultibanco: number;
+  countCheque: number;
+  totalCount: number;
 }
