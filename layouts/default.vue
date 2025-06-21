@@ -35,6 +35,7 @@ const breadcrumbMap: Record<string, string> = {
   "/frontdesk/settings": "Definições",
   "/frontdesk/patients": "Pacientes",
   "/frontdesk/orcamentos": "Orcamentos",
+  "/frontdesk/caixa": "Caixa",
   "/pacient": "Pacientes",
 };
 

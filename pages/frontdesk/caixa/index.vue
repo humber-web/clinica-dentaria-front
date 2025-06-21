@@ -47,10 +47,10 @@
         @pay-invoice="handlePayInvoice"
         @pay-parcela="handlePayParcela"
       />
-       <!-- <CaixaPaymentHistory
-       :payments="session.payments" -->
-    
-    />
+       <CaixaPaymentHistory
+        v-if="payments.length > 0"
+        :payments="payments"
+      />
     </div>
 
    
@@ -104,6 +104,7 @@ const {
   session, 
   pendingInvoices, 
   pendingParcels, 
+  payments,
   loading, 
   summary,
   fetchOpenSession,
