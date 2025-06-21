@@ -1,13 +1,13 @@
-import { ref, computed } from 'vue';
-import { useToast } from '@/components/ui/toast';
+import { ref, computed } from "vue";
+import { useToast } from "@/components/ui/toast";
 import type {
   CashierSession,
   CashierPayment,
   PendingInvoice,
   PendingParcel,
   CashierSummary,
-  SessionResponse
-} from '@/types/caixa';
+  SessionResponse,
+} from "@/types/caixa";
 
 export function useCashier() {
   const { get, post } = useApiService();
@@ -24,7 +24,7 @@ export function useCashier() {
   }>({
     count: 0,
     total: 0,
-    by_method: {}
+    by_method: {},
   });
   const loading = ref(false);
 
@@ -32,19 +32,19 @@ export function useCashier() {
   async function fetchOpenSession(): Promise<CashierSession | null> {
     loading.value = true;
     try {
-      const response = await get('caixa/sessions');
-      
+      const response = await get("caixa/sessions");
+
       // Update session and payment data from the combined response
       session.value = response.session;
-      
+
       // Update payment summary data
       paymentSummary.value = response.payments;
-      
+
       // Update payments history if available
       if (response.payments.history) {
         payments.value = response.payments.history;
       }
-      
+
       return response.session;
     } catch (err: any) {
       if (err.response?.status === 404 || err.status === 404) {
@@ -52,9 +52,9 @@ export function useCashier() {
         return null;
       }
       toast({
-        title: 'Erro',
-        description: 'Erro ao verificar sessão de caixa',
-        variant: 'destructive',
+        title: "Erro",
+        description: "Erro ao verificar sessão de caixa",
+        variant: "destructive",
       });
       return null;
     } finally {
@@ -67,24 +67,26 @@ export function useCashier() {
     loading.value = true;
     try {
       const payload = { valor_inicial: valorInicial };
-      const data = await post('caixa/sessions', payload);
+      const data = await post("caixa/sessions", payload);
       session.value = data;
       payments.value = [];
       paymentSummary.value = {
         count: 0,
         total: 0,
-        by_method: {}
+        by_method: {},
       };
       toast({
-        title: 'Caixa Aberto',
-        description: `Sessão iniciada com valor inicial de ${valorInicial.toFixed(2)}`,
+        title: "Caixa Aberto",
+        description: `Sessão iniciada com valor inicial de ${valorInicial.toFixed(
+          2
+        )}`,
       });
       return data;
     } catch (err: any) {
       toast({
-        title: 'Erro',
-        description: 'Erro ao abrir sessão de caixa',
-        variant: 'destructive',
+        title: "Erro",
+        description: "Erro ao abrir sessão de caixa",
+        variant: "destructive",
       });
       throw err;
     } finally {
@@ -101,9 +103,9 @@ export function useCashier() {
       pendingParcels.value = result.parcelas;
     } catch (err: any) {
       toast({
-        title: 'Erro',
-        description: 'Erro ao carregar pendências',
-        variant: 'destructive',
+        title: "Erro",
+        description: "Erro ao carregar pendências",
+        variant: "destructive",
       });
     } finally {
       loading.value = false;
@@ -114,10 +116,16 @@ export function useCashier() {
   async function pay(
     sessionId: number,
     paymentData: {
-      targetType: 'fatura' | 'parcela';
+      targetType: "fatura" | "parcela";
       targetId: number;
       valorPago: number;
-      metodo: 'dinheiro' | 'cartao' | 'transferencia' | 'mbway' | 'multibanco' | 'cheque';
+      metodo:
+        | "dinheiro"
+        | "cartao"
+        | "transferencia"
+        | "mbway"
+        | "multibanco"
+        | "cheque";
       observacoes?: string;
     }
   ): Promise<void> {
@@ -127,32 +135,32 @@ export function useCashier() {
         valor_pago: paymentData.valorPago,
         metodo_pagamento: paymentData.metodo,
       };
-      if (paymentData.observacoes) payload.observacoes = paymentData.observacoes;
-      if (paymentData.targetType === 'fatura') {
+      if (paymentData.observacoes)
+        payload.observacoes = paymentData.observacoes;
+      if (paymentData.targetType === "fatura") {
         payload.fatura_id = paymentData.targetId;
       } else {
         payload.parcela_id = paymentData.targetId;
       }
-      const data = await post(
-        `caixa/sessions/${sessionId}/payments`,
-        payload
-      );
-      
+      const data = await post(`caixa/sessions/${sessionId}/payments`, payload);
+
       // Refresh the entire session to get updated payment data
       await fetchOpenSession();
-      
+
       // Also refresh pending items
       await fetchPending(sessionId);
-      
+
       toast({
-        title: 'Pagamento Registrado',
-        description: `Pagamento de ${paymentData.valorPago.toFixed(2)} registrado com sucesso`,
+        title: "Pagamento Registrado",
+        description: `Pagamento de ${paymentData.valorPago.toFixed(
+          2
+        )} registrado com sucesso`,
       });
     } catch (err: any) {
       toast({
-        title: 'Erro',
-        description: 'Erro ao registrar pagamento',
-        variant: 'destructive',
+        title: "Erro",
+        description: "Erro ao registrar pagamento",
+        variant: "destructive",
       });
       throw err;
     } finally {
@@ -168,20 +176,19 @@ export function useCashier() {
     loading.value = true;
     try {
       const payload = { valor_final: valorFinal };
-      const data = await post(
-        `caixa/sessions/${sessionId}/close`,
-        payload
-      );
+      const data = await post(`caixa/sessions/${sessionId}/close`, payload);
       session.value = data;
       toast({
-        title: 'Caixa Fechado',
-        description: `Sessão encerrada com valor final de ${valorFinal.toFixed(2)}`,
+        title: "Caixa Fechado",
+        description: `Sessão encerrada com valor final de ${valorFinal.toFixed(
+          2
+        )}`,
       });
     } catch (err: any) {
       toast({
-        title: 'Erro',
-        description: 'Erro ao fechar sessão de caixa',
-        variant: 'destructive',
+        title: "Erro",
+        description: "Erro ao fechar sessão de caixa",
+        variant: "destructive",
       });
       throw err;
     } finally {
@@ -189,22 +196,29 @@ export function useCashier() {
     }
   }
 
+  const hasOpenSession = computed(() => {
+    return !!session.value;
+  });
+
+  const openSessionId = computed(() => {
+    return session.value?.id || null;
+  });
   // Use server-provided payment summary data
   const summary = computed<CashierSummary>(() => {
     // If we have server-provided payment summary data, use it
     const methodTotals = paymentSummary.value.by_method || {};
-    
+
     const valorInicial = session.value?.valor_inicial || 0;
-    const totalDinheiro = methodTotals['dinheiro']?.total || 0;
-    const totalCartao = methodTotals['cartao']?.total || 0;
-    const totalTransferencia = methodTotals['transferencia']?.total || 0;
-    const totalMBWay = methodTotals['mbway']?.total || 0;
-    const totalMultibanco = methodTotals['multibanco']?.total || 0;
-    const totalCheque = methodTotals['cheque']?.total || 0;
-    
+    const totalDinheiro = methodTotals["dinheiro"]?.total || 0;
+    const totalCartao = methodTotals["cartao"]?.total || 0;
+    const totalTransferencia = methodTotals["transferencia"]?.total || 0;
+    const totalMBWay = methodTotals["mbway"]?.total || 0;
+    const totalMultibanco = methodTotals["multibanco"]?.total || 0;
+    const totalCheque = methodTotals["cheque"]?.total || 0;
+
     const totalRecebido = paymentSummary.value.total || 0;
     const saldoEsperado = valorInicial + totalRecebido;
-    
+
     return {
       valorInicial,
       totalDinheiro,
@@ -216,13 +230,13 @@ export function useCashier() {
       totalRecebido,
       saldoEsperado,
       // Include payment method counts
-      countDinheiro: methodTotals['dinheiro']?.count || 0,
-      countCartao: methodTotals['cartao']?.count || 0,
-      countTransferencia: methodTotals['transferencia']?.count || 0,
-      countMBWay: methodTotals['mbway']?.count || 0,
-      countMultibanco: methodTotals['multibanco']?.count || 0,
-      countCheque: methodTotals['cheque']?.count || 0,
-      totalCount: paymentSummary.value.count || 0
+      countDinheiro: methodTotals["dinheiro"]?.count || 0,
+      countCartao: methodTotals["cartao"]?.count || 0,
+      countTransferencia: methodTotals["transferencia"]?.count || 0,
+      countMBWay: methodTotals["mbway"]?.count || 0,
+      countMultibanco: methodTotals["multibanco"]?.count || 0,
+      countCheque: methodTotals["cheque"]?.count || 0,
+      totalCount: paymentSummary.value.count || 0,
     };
   });
 
@@ -234,10 +248,12 @@ export function useCashier() {
     loading,
     summary,
     paymentSummary,
+    hasOpenSession,
+    openSessionId,
     fetchOpenSession,
     openSession,
     fetchPending,
     pay,
-    closeSession
+    closeSession,
   };
 }

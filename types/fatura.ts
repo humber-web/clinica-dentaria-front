@@ -86,4 +86,5 @@ export interface PagamentoRequest {
   metodo_pagamento: MetodoPagamento;
   data_pagamento?: string; // ISO date string
   observacoes?: string;
+  session_id?: number;
 }

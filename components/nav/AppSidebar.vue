@@ -145,6 +145,7 @@ const menuConfigurations: MenuConfigurations = {
     { title: "Agenda", url: "/frontdesk/marcacoes", icon: Calendar },
     { title: "Orcamentos", url: "/frontdesk/orcamentos", icon: Receipt },
     { title: "Pacientes", url: "/frontdesk/patients", icon: Users },
+    { title: "Preços", url: "/frontdesk/prices",icon:ClipboardList },
     { title: "Caixa", url: "/frontdesk/caixa", icon: Wallet },
   ],
   assistant: [

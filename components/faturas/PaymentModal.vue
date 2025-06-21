@@ -7,6 +7,23 @@
           Selecione a parcela e informe os dados do pagamento
         </DialogDescription>
       </DialogHeader>
+      
+      <div v-if="hasOpenSession" class="bg-green-50 p-3 rounded-md mb-4">
+        <div class="flex items-center">
+          <CheckCircleIcon class="h-5 w-5 text-green-500 mr-2" />
+          <span class="text-sm font-medium text-green-800">
+            Caixa aberto: Sessão #{{ openSessionId }}
+          </span>
+        </div>
+      </div>
+      <div v-else class="bg-yellow-50 p-3 rounded-md mb-4">
+        <div class="flex items-center">
+          <AlertTriangleIcon class="h-5 w-5 text-yellow-500 mr-2" />
+          <span class="text-sm font-medium text-yellow-800">
+            Nenhuma sessão de caixa aberta. O pagamento será registrado sem caixa.
+          </span>
+        </div>
+      </div>
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <!-- Seleção de parcela -->
@@ -99,6 +116,7 @@
 import { ref, computed, watch } from 'vue';
 
 import { useFaturacao,formatCurrency,formatDate,getValorPago,getValorPendente } from '@/composables/useFaturacao';
+import { useCashier } from '@/composables/useCashier'
 import type { ParcelaRead, PagamentoRequest, MetodoPagamento } from '@/types/fatura';
 import { useToast } from '@/components/ui/toast/use-toast';
 
@@ -115,6 +133,7 @@ const emit = defineEmits<{
 
 // Composable
 const { pagarParcela, loading } = useFaturacao();
+const { fetchOpenSession, hasOpenSession, openSessionId } = useCashier();
 const { toast } = useToast();
 
 
@@ -150,9 +169,10 @@ watch(() => selectedParcelaId.value, (newValue) => {
 });
 
 // Reset form when modal opens/closes
-watch(() => props.open, (isOpen) => {
+watch(() => props.open, async (isOpen) => {
   if (isOpen) {
     resetForm();
+    await fetchOpenSession();
   }
 });
 
@@ -177,7 +197,8 @@ const handleSubmit = async () => {
     valor_pago: valor.value,
     metodo_pagamento: metodoPagamento.value as MetodoPagamento,
     data_pagamento: dataPagamento.value,
-    observacoes: observacoes.value || undefined
+    observacoes: observacoes.value || undefined,
+    session_id: openSessionId.value || undefined,
   };
 
   try {
