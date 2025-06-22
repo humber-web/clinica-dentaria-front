@@ -1,7 +1,17 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
 import type { Clinica } from "~/types/clinica";
-import { PlusIcon, CheckIcon, XIcon, CircleIcon } from "lucide-vue-next";
+import {
+  PlusIcon,
+  CheckIcon,
+  XIcon,
+  CircleIcon,
+  FileTextIcon,
+  EyeIcon,
+  DownloadIcon,
+  MailIcon,
+  ChevronDownIcon,
+} from "lucide-vue-next";
 import { useToast } from "@/components/ui/toast";
 
 // Importações reais
@@ -15,10 +25,12 @@ import type {
   AddItemOrcamentoDTO,
   OrcamentoItemRead,
 } from "~/types/orcamento";
+import { usePdf } from "@/composables/usePdf";
 
 const route = useRoute();
 const router = useRouter();
 const { toast } = useToast();
+const { orcamento: pdfOrcamento } = usePdf();
 const source = computed(() => route.query.source as string);
 const patientId = computed(() =>
   route.query.patient_id ? Number(route.query.patient_id) : null
@@ -114,6 +126,21 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+async function viewPdf() {
+  if (!orcamento.value) return;
+  await pdfOrcamento.view(orcamento.value.id);
+}
+
+async function downloadPdf() {
+  if (!orcamento.value) return;
+  await pdfOrcamento.download(orcamento.value.id);
+}
+
+async function sendEmail() {
+  if (!orcamento.value) return;
+  await pdfOrcamento.email(orcamento.value.id);
+}
 
 // Carregar orçamento
 async function carregarOrcamento() {
@@ -442,6 +469,30 @@ watch(
     <div v-else>
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold">Orçamento #{{ orcamento.id }}</h1>
+        <DropdownMenu v-if="orcamento.estado === 'aprovado'">
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" class="flex items-center gap-2">
+              <FileTextIcon class="h-4 w-4" />
+              <span>Documento</span>
+              <ChevronDownIcon class="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem @click="viewPdf" class="cursor-pointer">
+              <EyeIcon class="h-4 w-4 mr-2" />
+              <span>Visualizar PDF</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="downloadPdf" class="cursor-pointer">
+              <DownloadIcon class="h-4 w-4 mr-2" />
+              <span>Download PDF</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="sendEmail" class="cursor-pointer">
+              <MailIcon class="h-4 w-4 mr-2" />
+              <span>Enviar por Email</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <Badge :variant="getEstadoVariant(orcamento.estado)" class="text-sm">
           <div class="flex items-center gap-1">
             <CheckIcon v-if="orcamento.estado === 'aprovado'" class="w-3 h-3" />

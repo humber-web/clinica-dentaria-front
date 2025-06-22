@@ -1,23 +1,54 @@
 import { useRuntimeConfig } from '#app';
 
+interface RequestOptions {
+  params?: Record<string, any>;
+  headers?: Record<string, string>;
+  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
+}
+
 export function useApiService() {
   const config = useRuntimeConfig();
   const baseUrl = config.public.apiBase;
   
-  async function get(endpoint: string) {
+   async function get(endpoint: string, options: RequestOptions = {}) {
     const token = useCookie('token').value;
     try {
-      const response = await fetch(`${baseUrl}${endpoint}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      // Include any additional headers from options
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        ...options.headers
+      };
+      
+      // Build URL with query parameters if provided
+      let url = `${baseUrl}${endpoint}`;
+      if (options.params) {
+        const queryParams = new URLSearchParams();
+        for (const [key, value] of Object.entries(options.params)) {
+          queryParams.append(key, String(value));
         }
+        url += `?${queryParams.toString()}`;
+      }
+      
+      const response = await fetch(url, {
+        headers
       });
       
       if (!response.ok) {
         throw new Error(`Erro na API: ${response.status}`);
       }
       
-      return response.json();
+      // Handle different response types
+      switch (options.responseType) {
+        case 'text':
+          return response.text();
+        case 'blob':
+          return response.blob();
+        case 'arraybuffer':
+          return response.arrayBuffer();
+        case 'json':
+        default:
+          return response.json();
+      }
     } catch (error) {
       console.error(`GET ${endpoint} falhou:`, error);
       throw error;

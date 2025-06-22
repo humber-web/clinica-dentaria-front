@@ -129,6 +129,7 @@ const formatDateTime = (dateString: string) => {
 
 const handleSessionOpened = async () => {
   showOpenModal.value = false;
+  await fetchOpenSession();
   if (session.value) {
     await fetchPending(session.value.id);
   }

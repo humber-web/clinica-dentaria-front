@@ -17,6 +17,7 @@ export function useCashier() {
   const pendingInvoices = ref<PendingInvoice[]>([]);
   const pendingParcels = ref<PendingParcel[]>([]);
   const payments = ref<CashierPayment[]>([]);
+  const initialized = ref(false); 
   const paymentSummary = ref<{
     count: number;
     total: number;
@@ -28,39 +29,70 @@ export function useCashier() {
   });
   const loading = ref(false);
 
+function extractStatus(err: any): number | undefined {
+  // ①  Axios / ofetch / FetchError
+  if (err?.statusCode) return err.statusCode;
+  if (err?.status)     return err.status;
+  if (err?.response?.status) return err.response.status;
+
+  // ②  Erro simples criado pelo apiService: "Erro na API: 404"
+  if (typeof err?.message === "string") {
+    const m = err.message.match(/(\d{3})$/);   // procura número no fim
+    if (m) return Number(m[1]);
+  }
+  return undefined;
+}
+
+
+
   // Busca sessão de caixa aberta
   async function fetchOpenSession(): Promise<CashierSession | null> {
-    loading.value = true;
-    try {
-      const response = await get("caixa/sessions");
+  loading.value = true;
+  initialized.value = false;
 
-      // Update session and payment data from the combined response
-      session.value = response.session;
+  try {
+    const response = await get("caixa/sessions");   // apiService inalterado
 
-      // Update payment summary data
-      paymentSummary.value = response.payments;
+    /* ---- sessão encontrada ---- */
+    session.value        = response.session;
+    paymentSummary.value = response.payments;
+    payments.value       = response.payments?.history ?? [];
+    return response.session;
 
-      // Update payments history if available
-      if (response.payments.history) {
-        payments.value = response.payments.history;
-      }
+  } catch (err: any) {
 
-      return response.session;
-    } catch (err: any) {
-      if (err.response?.status === 404 || err.status === 404) {
-        session.value = null;
-        return null;
-      }
-      toast({
-        title: "Erro",
-        description: "Erro ao verificar sessão de caixa",
-        variant: "destructive",
-      });
+    /* ---- 404 = não há sessão → limpa estado, NÃO mostra toast ---- */
+    if (extractStatus(err) === 404) {
+      console.log("No open cashier session (404).");
+
+      session.value = null;
+      payments.value = [];
+      paymentSummary.value = { count: 0, total: 0, by_method: {} };
       return null;
-    } finally {
-      loading.value = false;
     }
+
+    /* ---- outros erros → toast ---- */
+    console.error("fetchOpenSession (unexpected):", err);
+
+    toast({
+      title: "Erro",
+      description: "Erro ao verificar sessão de caixa",
+      variant: "destructive",
+    });
+
+    session.value = null;
+    payments.value = [];
+    paymentSummary.value = { count: 0, total: 0, by_method: {} };
+    return null;
+
+  } finally {
+    initialized.value = true;
+    loading.value = false;
   }
+}
+
+
+
 
   // Abre uma nova sessão de caixa
   async function openSession(valorInicial: number): Promise<CashierSession> {

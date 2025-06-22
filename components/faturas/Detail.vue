@@ -2,6 +2,34 @@
   <div class="space-y-6">
     <DialogHeader>
       <DialogTitle>Detalhes da Fatura {{ localFatura.id }}</DialogTitle>
+      <div
+        v-if="localFatura.estado === 'paga'"
+        class="flex items-center justify-end space-x-3 mt-2"
+      >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" class="flex items-center gap-2">
+              <FileTextIcon class="h-4 w-4" />
+              <span>Documento</span>
+              <ChevronDownIcon class="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem @click="viewPdf" class="cursor-pointer">
+              <EyeIcon class="h-4 w-4 mr-2" />
+              <span>Visualizar PDF</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="downloadPdf" class="cursor-pointer">
+              <DownloadIcon class="h-4 w-4 mr-2" />
+              <span>Download PDF</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="sendEmail" class="cursor-pointer">
+              <MailIcon class="h-4 w-4 mr-2" />
+              <span>Enviar por Email</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </DialogHeader>
 
     <!-- Informações gerais -->
@@ -191,7 +219,9 @@
               <TableCell class="text-right">
                 {{ formatCurrency(pagamento.valor) }}
               </TableCell>
-              <TableCell>{{ getMetodoPagamentoLabel(pagamento.metodo_pagamento) }}</TableCell>
+              <TableCell>{{
+                getMetodoPagamentoLabel(pagamento.metodo_pagamento)
+              }}</TableCell>
               <TableCell>{{ pagamento.observacoes || "-" }}</TableCell>
             </TableRow>
           </TableBody>
@@ -201,61 +231,63 @@
 
     <!-- Resumo financeiro -->
     <Card>
-    <CardHeader>
-      <CardTitle>Resumo Financeiro</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="text-center p-4 bg-muted/50 rounded-lg">
-          <p class="text-2xl font-bold">
-            {{ formatCurrency(localFatura.total) }}
-          </p>
-          <p class="text-sm text-muted-foreground">Valor Total</p>
-        </div>
-        <div
-          class="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg"
-        >
-          <p class="text-2xl font-bold text-green-600">
-            {{ formatCurrency(totalPago) }}
-          </p>
-          <p class="text-sm text-muted-foreground">Valor Pago</p>
-          <div class="mt-1 text-xs">
-            <span v-if="valorPagoParcelas > 0 && valorPagoDireto > 0">
-              {{ formatCurrency(valorPagoParcelas) }} parcelas + {{ formatCurrency(valorPagoDireto) }} direto
-            </span>
-            <span v-else-if="valorPagoParcelas > 0">
-              {{ formatCurrency(valorPagoParcelas) }} via parcelas
-            </span>
-            <span v-else-if="valorPagoDireto > 0">
-              {{ formatCurrency(valorPagoDireto) }} pagamento direto
-            </span>
+      <CardHeader>
+        <CardTitle>Resumo Financeiro</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="text-center p-4 bg-muted/50 rounded-lg">
+            <p class="text-2xl font-bold">
+              {{ formatCurrency(localFatura.total) }}
+            </p>
+            <p class="text-sm text-muted-foreground">Valor Total</p>
+          </div>
+          <div
+            class="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg"
+          >
+            <p class="text-2xl font-bold text-green-600">
+              {{ formatCurrency(totalPago) }}
+            </p>
+            <p class="text-sm text-muted-foreground">Valor Pago</p>
+            <div class="mt-1 text-xs">
+              <span v-if="valorPagoParcelas > 0 && valorPagoDireto > 0">
+                {{ formatCurrency(valorPagoParcelas) }} parcelas +
+                {{ formatCurrency(valorPagoDireto) }} direto
+              </span>
+              <span v-else-if="valorPagoParcelas > 0">
+                {{ formatCurrency(valorPagoParcelas) }} via parcelas
+              </span>
+              <span v-else-if="valorPagoDireto > 0">
+                {{ formatCurrency(valorPagoDireto) }} pagamento direto
+              </span>
+            </div>
+          </div>
+          <div
+            class="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg"
+          >
+            <p class="text-2xl font-bold text-orange-600">
+              {{ formatCurrency(valorPendente) }}
+            </p>
+            <p class="text-sm text-muted-foreground">Valor Pendente</p>
+            <div class="mt-1 text-xs" v-if="valorPendente > 0">
+              {{ percentualPendente }}% do total
+            </div>
+          </div>
+          <div
+            class="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg"
+          >
+            <p class="text-2xl font-bold text-blue-600">
+              {{ parcelasStats.pendentes + parcelasStats.parciais }}
+            </p>
+            <p class="text-sm text-muted-foreground">Parcelas Pendentes</p>
+            <div class="mt-1 text-xs" v-if="parcelasStats.total > 0">
+              {{ parcelasStats.pendentes }} pendentes,
+              {{ parcelasStats.parciais }} parciais
+            </div>
           </div>
         </div>
-        <div
-          class="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg"
-        >
-          <p class="text-2xl font-bold text-orange-600">
-            {{ formatCurrency(valorPendente) }}
-          </p>
-          <p class="text-sm text-muted-foreground">Valor Pendente</p>
-          <div class="mt-1 text-xs" v-if="valorPendente > 0">
-            {{ percentualPendente }}% do total
-          </div>
-        </div>
-        <div
-          class="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg"
-        >
-          <p class="text-2xl font-bold text-blue-600">
-            {{ parcelasStats.pendentes + parcelasStats.parciais }}
-          </p>
-          <p class="text-sm text-muted-foreground">Parcelas Pendentes</p>
-          <div class="mt-1 text-xs" v-if="parcelasStats.total > 0">
-            {{ parcelasStats.pendentes }} pendentes, {{ parcelasStats.parciais }} parciais
-          </div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
+      </CardContent>
+    </Card>
   </div>
 </template>
 
@@ -267,8 +299,10 @@ import {
   getValorPendente,
   useFaturacao,
 } from "@/composables/useFaturacao";
+import { usePdf } from "@/composables/usePdf";
 import type { FaturaRead, ParcelaRead } from "@/types/fatura";
 import { useToast } from "@/components/ui/toast/use-toast";
+import { FileTextIcon, EyeIcon, DownloadIcon, MailIcon, ChevronDownIcon } from 'lucide-vue-next';
 
 // Props
 const props = defineProps<{ fatura: FaturaRead }>();
@@ -277,7 +311,9 @@ const emit = defineEmits<{
   (e: "pay-parcela", parcela: ParcelaRead): void;
 }>();
 const { toast } = useToast();
+const { get, post } = useApiService();
 
+const { fatura: pdfFatura } = usePdf();
 // Formatters and labels
 const getTipoLabel = (t: string) =>
   ({ consulta: "Consulta", plano: "Plano de Tratamento" }[t] || t);
@@ -308,10 +344,10 @@ const getParcelaEstadoBadgeVariant = (e: string) =>
   ({ pendente: "secondary", paga: "default", parcial: "outline" }[e] as any);
 
 const getMetodoPagamentoLabel = (m: string) =>
-  ({ 
-    dinheiro: "Dinheiro", 
-    cartao: "Cartão", 
-    transferencia: "Transferência" 
+  ({
+    dinheiro: "Dinheiro",
+    cartao: "Cartão",
+    transferencia: "Transferência",
   }[m] || m);
 
 // Local state
@@ -320,30 +356,34 @@ const localFatura = ref<FaturaRead>(props.fatura);
 // Enhanced statistics calculations
 const valorPagoParcelas = computed(() => {
   if (!localFatura.value?.parcelas?.length) return 0;
-  
+
   // Sum all valor_pago values, ensuring null/undefined values are treated as 0
   return localFatura.value.parcelas.reduce((sum, p) => {
-    const valorPago = p.valor_pago !== null && p.valor_pago !== undefined ? p.valor_pago : 0;
+    const valorPago =
+      p.valor_pago !== null && p.valor_pago !== undefined ? p.valor_pago : 0;
     return sum + valorPago;
   }, 0);
 });
 
 const valorPagoDireto = computed(() => {
   if (!localFatura.value?.pagamentos?.length) return 0;
-  
+
   return localFatura.value.pagamentos.reduce((sum, p) => {
     const valor = p.valor !== null && p.valor !== undefined ? p.valor : 0;
     return sum + valor;
   }, 0);
 });
 
-const totalPago = computed(() => valorPagoParcelas.value + valorPagoDireto.value);
+const totalPago = computed(
+  () => valorPagoParcelas.value + valorPagoDireto.value
+);
 
 const percentualPendente = computed(() => {
   if (localFatura.value.total <= 0) return 0;
-  return Math.round((getValorPendente(localFatura.value) / localFatura.value.total) * 100);
+  return Math.round(
+    (getValorPendente(localFatura.value) / localFatura.value.total) * 100
+  );
 });
-
 
 const valorPendente = computed(() => {
   const total = localFatura.value.total || 0;
@@ -354,9 +394,9 @@ const parcelasStats = computed(() => {
   const parcelas = localFatura.value?.parcelas || [];
   return {
     total: parcelas.length,
-    pagas: parcelas.filter(p => p.estado === 'paga').length,
-    parciais: parcelas.filter(p => p.estado === 'parcial').length,
-    pendentes: parcelas.filter(p => p.estado === 'pendente').length
+    pagas: parcelas.filter((p) => p.estado === "paga").length,
+    parciais: parcelas.filter((p) => p.estado === "parcial").length,
+    pendentes: parcelas.filter((p) => p.estado === "pendente").length,
   };
 });
 
@@ -409,7 +449,7 @@ const { generateParcelas, getFatura } = useFaturacao();
 
 // handle pay parcela
 function handlePayParcela(parcela: ParcelaRead) {
-  emit('pay-parcela', parcela);
+  emit("pay-parcela", parcela);
 }
 
 // on click → generate + reload fatura
@@ -455,5 +495,16 @@ async function onGenerateParcelas() {
       variant: "destructive",
     });
   }
+}
+
+async function viewPdf() {
+  await pdfFatura.view(localFatura.value.id);
+}
+async function downloadPdf() {
+  await pdfFatura.download(localFatura.value.id);
+}
+
+async function sendEmail() {
+  await pdfFatura.email(localFatura.value.id);
 }
 </script>

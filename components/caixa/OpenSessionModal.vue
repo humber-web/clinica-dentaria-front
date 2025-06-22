@@ -10,7 +10,7 @@
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <div class="space-y-2">
-          <Label for="valorInicial">Valor Inicial (€)</Label>
+          <Label for="valorInicial">Valor Inicial (CVE)</Label>
           <Input
             id="valorInicial"
             v-model.number="valorInicial"
