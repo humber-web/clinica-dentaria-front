@@ -13,12 +13,13 @@ defineProps<Props>()
     <CardHeader class="p-0 mb-2 flex justify-between items-center">
       <CardTitle>{{ title }}</CardTitle>
       <slot name="actions">
-        <DownloadButton format="pdf" />
+        <DashboardDowloadButton format="pdf" />
       </slot>
     </CardHeader>
 
     <CardContent class="p-0">
       <LineChart
+        :title="title"
         :data="data"
         :index="index"
         :categories="categories"

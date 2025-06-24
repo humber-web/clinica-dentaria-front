@@ -32,8 +32,28 @@ export const useReports = () => {
     const response = await service.get('reports/cash-shift', {
       params: { day }
     });
-    return response.data || [];
+    return response || [];
   };
+
+
+/**
+ * Obter total de entradas de caixa agregadas por dia
+ * @param start Data de início (YYYY-MM-DD)
+ * @param end   Data de fim   (YYYY-MM-DD)
+ * @returns     Array [{ dia:'2025-06-20', entradas: 18270 }]
+ */
+const getCashShiftRange = async (start: string, end: string) => {
+  const response = await service.get('reports/cash-shift-range', {
+    params: { start, end }
+  })
+
+  // garante números
+  return (response ?? []).map((r: any) => ({
+    dia: r.dia,
+    entradas: +r.entradas          // string → number
+  }))
+}
+
 
   /**
    * Obter faturas em atraso
@@ -83,6 +103,7 @@ export const useReports = () => {
     getRevenue,
     getTopServices,
     getCashShift,
+    getCashShiftRange,
     getOverdue,
     getStockCritical,
     getProductivity,

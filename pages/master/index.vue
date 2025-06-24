@@ -5,9 +5,17 @@ const {
   getRevenue,
   getTopServices,
   getCashShift,
+  getCashShiftRange,
   getOverdue,
   getStockCritical,
 } = useReports();
+
+function toISODateLocal(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 // --- Stores reativos -------------------------------------------------
 const revenueDay = ref<any[]>([]);
@@ -19,37 +27,38 @@ const stockCrit = ref<any[]>([]);
 const overdue = ref<any[]>([]);
 
 onMounted(async () => {
-  const today        = new Date()
-  const isoToday     = today.toISOString().slice(0, 10)
-  const firstMonth   = isoToday.slice(0, 8) + '01'
-  const firstYear    = isoToday.slice(0, 4) + '-01-01'
-  const iso30        = new Date(today.getTime() - 30 * 864e5).toISOString().slice(0, 10)
+  const today = new Date();
+  const isoToday = today.toISOString().slice(0, 10);
+  const firstMonth = isoToday.slice(0, 8) + "01";
+  const firstYear = isoToday.slice(0, 4) + "-01-01";
+  const iso30Local = toISODateLocal(new Date(today.getTime() - 29 * 864e5));
 
-  revenueDay.value   = await getRevenue(isoToday, isoToday)       
-  revenueMonth.value = await getRevenue(firstMonth, isoToday)
-  revenueYear.value  = await getRevenue(firstYear,  isoToday)
+  revenueDay.value = await getRevenue(isoToday, isoToday);
+  revenueMonth.value = await getRevenue(firstMonth, isoToday);
+  revenueYear.value = await getRevenue(firstYear, isoToday);
 
-  cash30.value       = await getCashShift('2025-06-21')
-  services.value     = await getTopServices(5)
-  stockCrit.value    = await getStockCritical()
-  overdue.value      = await getOverdue(90)
-})
-
-
+  cash30.value = await getCashShiftRange(iso30Local, isoToday);
+  services.value = await getTopServices(5);
+  stockCrit.value = await getStockCritical();
+  overdue.value = await getOverdue(90);
+});
 
 // --- Derivados --------------------------------------------------------
 const kpis = computed(() => [
-  { title:'Receita Hoje', value: +revenueDay.value[0]?.receita_recebida || 0 },
-  { title:'Receita Mês',  value: revenueMonth.value.reduce((s,r)=>s+ +r.receita_recebida,0) },
-  { title:'Receita Ano',  value: revenueYear.value .reduce((s,r)=>s+ +r.receita_recebida,0) },
-])
+  { title: "Receita Hoje", value: +revenueDay.value[0]?.receita_recebida || 0 },
+  {
+    title: "Receita Mês",
+    value: revenueMonth.value.reduce((s, r) => s + +r.receita_recebida, 0),
+  },
+  {
+    title: "Receita Ano",
+    value: revenueYear.value.reduce((s, r) => s + +r.receita_recebida, 0),
+  },
+]);
 
 const cashEntries = computed(() =>
-  cash30.value.map((r:any)=>({
-    dia: r.data_inicio,
-    Entradas: +r.total_entradas        // número
-  }))
-)
+  cash30.value.map((r: any) => ({ dia: r.dia, Entradas: r.entradas }))
+);
 
 const alerts = computed(() => [
   ...overdue.value.map(
@@ -70,7 +79,6 @@ const alerts = computed(() => [
       :title="k.title"
       :value="k.value"
     />
-
     <DashboardLineChart
       title="Entradas de Caixa (30 dias)"
       :data="cashEntries"
@@ -79,13 +87,21 @@ const alerts = computed(() => [
     >
       <template #actions>
         <DashboardDowloadButton format="pdf" />
-        <DashboardDowloadButton format="xlsx" />
       </template>
     </DashboardLineChart>
+    <DashboardBarChart
+      title="Top 5 Serviços"
+      :data="services"
+      index="servico"
+      :categories="['valor_total']"
+    >
+      <template #actions>
+        <DashboardDowloadButton format="xlsx" />
+      </template>
+    </DashboardBarChart>
     <DashboardStocktable :items="stockCrit">
       <template #actions><DownloadButton format="csv" /></template>
     </DashboardStocktable>
-    <DashboardAlertFeed :alerts="alerts" /> 
-   
+    <DashboardAlertFeed :alerts="alerts" />
   </div>
 </template>
