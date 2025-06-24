@@ -20,11 +20,15 @@ type Clinic = {
   partilha_dados: boolean;
   morada: string;
   parent_id: number | null;
+  clinica_pai?: {
+    id: number;
+    nome: string;
+  } | null;
 };
 
 const { toast } = useToast();
 const router = useRouter();
-const config = useRuntimeConfig();        
+const config = useRuntimeConfig();
 const baseUrl = config.public.apiBase;
 
 const clinics = ref<Clinic[]>([]);
@@ -63,7 +67,8 @@ const mappedClinics = computed(() =>
     email: c.email_envio,
     partilha_dados: c.partilha_dados,
     morada: c.morada,
-    parentId: c.parent_id,
+    parentId: c.clinica_pai?.id || null, // Use parent ID directly
+    parentName: c.clinica_pai?.nome, // Add parent name directly
   }))
 );
 
@@ -100,14 +105,9 @@ function confirmDelete() {
   showDangerConfirmDialog.value = false;
 }
 
-
 function redirectToConfig(clinic: Clinic) {
   router.push(`/master/clinic/${clinic.id}/settings`);
 }
-
-
-
-
 </script>
 <template>
   <div class="flex flex-col gap-8 p-6">
@@ -200,6 +200,7 @@ function redirectToConfig(clinic: Clinic) {
                 <strong>Email:</strong> {{ selectedClinic.email_envio }}
               </div>
               <div><strong>Morada:</strong> {{ selectedClinic.morada }}</div>
+              <pre>{{}}</pre>
               <div>
                 <strong>Partilha de Dados:</strong>
                 <span
@@ -215,12 +216,16 @@ function redirectToConfig(clinic: Clinic) {
               </div>
               <div>
                 <strong>Clínica-Pai:</strong>
-                {{
-                  selectedClinic.parent_id
-                    ? clinics.find((c) => c.id === selectedClinic?.parent_id)
-                        ?.nome
-                    : "Nenhuma"
-                }}
+                <span v-if="selectedClinic.clinica_pai">
+                  {{ selectedClinic.clinica_pai.nome }}
+                </span>
+                <span v-else-if="selectedClinic.clinica_pai">
+                  {{
+                    clinics.find((c) => c.id === selectedClinic?.clinica_pai?.id)
+                      ?.nome || "Clínica #" + selectedClinic?.clinica_pai?.id
+                  }}
+                </span>
+                <span v-else> Nenhuma </span>
               </div>
             </div>
           </template>
@@ -295,7 +300,10 @@ function redirectToConfig(clinic: Clinic) {
       </DialogContent>
     </Dialog>
 
-    <Dialog :open="showConfigFormDialog" @update:open="showConfigFormDialog = $event">
+    <Dialog
+      :open="showConfigFormDialog"
+      @update:open="showConfigFormDialog = $event"
+    >
       <DialogContent class="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Adicionar Configuração</DialogTitle>
@@ -318,7 +326,9 @@ function redirectToConfig(clinic: Clinic) {
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" @click="showConfigFormDialog = false">Cancelar</Button>
+          <Button variant="outline" @click="showConfigFormDialog = false"
+            >Cancelar</Button
+          >
           <Button @click="saveConfig">Guardar</Button>
         </DialogFooter>
       </DialogContent>

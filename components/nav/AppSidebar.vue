@@ -13,7 +13,7 @@ import {
   ClipboardList,
   BarChart2,
   Receipt,
-  Wallet
+  Wallet,
 } from "lucide-vue-next";
 
 // Tipagem para os itens do menu
@@ -109,10 +109,7 @@ const menuConfigurations: MenuConfigurations = {
       title: "Início",
       url: "/master",
       icon: Home,
-      children: [
-        { title: "Resumo", url: "/master/overview" },
-        { title: "Equipa", url: "/master/team" },
-      ],
+     
     },
     {
       title: "Definições",
@@ -128,7 +125,6 @@ const menuConfigurations: MenuConfigurations = {
     { title: "Gerir Clínicas", url: "/master/clinics", icon: Building2 },
     { title: "Gerir Utilizadores", url: "/master/users", icon: UserCog },
     { title: "Gerir Stock", url: "/master/stock", icon: ClipboardList },
-    { title: "Relatórios", url: "/master/reports", icon: TrendingUp },
     { title: "Pacientes", url: "/master/patients", icon: Users },
     { title: "Orcamentos", url: "/master/orcamentos", icon: Receipt },
     { title: "Marcações", url: "/master/marcacoes", icon: Receipt },
@@ -139,13 +135,14 @@ const menuConfigurations: MenuConfigurations = {
     { title: "Pacientes", url: "/doctor/patients", icon: Users },
     { title: "Relatórios", url: "/doctor/reports", icon: TrendingUp },
     { title: "Definições", url: "/doctor/settings", icon: Settings },
+    
   ],
   frontdesk: [
     { title: "Início", url: "/frontdesk", icon: Home },
     { title: "Agenda", url: "/frontdesk/marcacoes", icon: Calendar },
     { title: "Orcamentos", url: "/frontdesk/orcamentos", icon: Receipt },
     { title: "Pacientes", url: "/frontdesk/patients", icon: Users },
-    { title: "Preços", url: "/frontdesk/prices",icon:ClipboardList },
+    { title: "Preços", url: "/frontdesk/prices", icon: ClipboardList },
     { title: "Caixa", url: "/frontdesk/caixa", icon: Wallet },
   ],
   assistant: [

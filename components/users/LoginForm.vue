@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { AlertCircle } from 'lucide-vue-next';
-type LoginResponse = { access_token: string };
+import { AlertCircle } from "lucide-vue-next";
+type LoginResponse = {
+  access_token: string;
+  expires_in: number;
+};
 type UserResponse = { perfil: { perfil: string } | null };
 
 const config = useRuntimeConfig();
@@ -37,8 +40,23 @@ const onSubmit = async (e: Event) => {
     if (fetchError.value) return;
 
     const token = data.value?.access_token;
+    const expiresIn = data.value?.expires_in || 3600;
+
+    const expiresInCookie = useCookie("expiresIn");
+    expiresInCookie.value = expiresIn.toString();
+
+    // Calculate and store expiration timestamp
+    const now = Date.now();
+    const expiresAt = now + expiresIn * 1000;
+    const tokenExpiresAtCookie = useCookie("tokenExpiresAt");
+    tokenExpiresAtCookie.value = expiresAt.toString();
+
+    console.log(
+      `Token will expire at: ${new Date(expiresAt).toLocaleTimeString()}`
+    );
     if (token) {
-      useCookie("token").value = token;
+      const tokenCookie = useCookie("token");
+      tokenCookie.value = token;
       const { data: user } = await useFetch<UserResponse>(
         `${baseUrl}utilizadores/me`,
         {

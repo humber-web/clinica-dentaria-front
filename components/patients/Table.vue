@@ -20,12 +20,7 @@ const emit = defineEmits<{
   (e: "details", paciente: any): void
 }>()
 
-watch(
-  () => props.rows,
-  (newRows) =>{
-    console.log("Rows updated:", newRows)
-  }
-)
+
 </script>
 
 <template>
