@@ -145,9 +145,9 @@ async function carregarOrcamento() {
 // Funções auxiliares
 const formatCurrency = (value: number | string): string => {
   const numValue = typeof value === "string" ? parseFloat(value) : value;
-  return new Intl.NumberFormat("pt-PT", {
+  return new Intl.NumberFormat("cv-CV", {
     style: "currency",
-    currency: "EUR",
+    currency: "CVE",
   }).format(numValue);
 };
 

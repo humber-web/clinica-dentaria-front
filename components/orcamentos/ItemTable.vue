@@ -7,9 +7,9 @@ import { useDentes } from "~/composables/useDentes";
 // Função para formatar valores monetários
 const formatCurrency = (value: number | string): string => {
   const numValue = typeof value === "string" ? parseFloat(value) : value;
-  return new Intl.NumberFormat("pt-PT", {
+  return new Intl.NumberFormat("cv-CV", {
     style: "currency",
-    currency: "EUR",
+    currency: "CVE",
   }).format(numValue);
 };
 
@@ -90,8 +90,8 @@ const onDelete = (itemId: number) => {
           <TableHead>Descrição</TableHead>
           <TableHead>Dente/Face</TableHead>
           <TableHead class="text-right">Qtd</TableHead>
-          <TableHead class="text-right">€ Seg. Unit.</TableHead>
-          <TableHead class="text-right">€ Pac. Unit.</TableHead>
+          <TableHead class="text-right">Seg. Unit.</TableHead>
+          <TableHead class="text-right">Pac. Unit.</TableHead>
           <TableHead v-if="!readonly" class="text-center">Ações</TableHead>
         </TableRow>
       </TableHeader>

@@ -126,7 +126,7 @@ const breadcrumbMap: Record<string, string> = {
   "/master/users": "Gerir Utilizadores",
   "/master/clinics/settings": "Configurações",
   "/master/stock": "Gerir Stock",
-  "/master/reports": "Relatórios",
+  "/master/reports": "Contabilidade",
   "/master/patients": "Gerir Pacientes",
   "/master/patient": "Gerir Pacientes",
   "/master/settings/entities": "Entidades",
@@ -135,13 +135,15 @@ const breadcrumbMap: Record<string, string> = {
   "/master/settings/prices": "Preços",
   "/master/orcamentos": "Orcamentos",
   "/master/marcacoes": "Marcações",
+  "/master/historico": "Logs",
 
   // Doctor Section Breadcrumbs
   "/doctor": "Início",
-  "/doctor/schedule": "Agenda",
+  "/doctor/marcacoes": "Agenda",
   "/doctor/patients": "Pacientes",
   "/doctor/reports": "Relatórios",
   "/doctor/settings": "Definições",
+  
 
   // front desk Section Breadcrumbs
   "/frontdesk": "Início",
@@ -162,6 +164,7 @@ const mainSection = computed(() => {
   if (route.path.match(/^\/master\/patient\/\d+$/)) return "/master/patients";
   if (route.path.match(/^\/frontdesk\/patient\/\d+$/)) return "/frontdesk/patients";
   if (route.path.startsWith("/master/patients")) return "/master/patients";
+  if (route.path.match(/^\/doctor\/patient\/\d+$/)) return "/doctor/patients";
   return route.path;
 });
 
@@ -173,6 +176,7 @@ const subpageBreadcrumbText = computed(() => {
   if (route.path.match(/^\/master\/clinic\/\d+\/settings/)) return 'Configurações'
   if (route.path.match(/^\/master\/patient\/\d+$/)) return 'Detalhes'
   if (route.path.match(/^\/frontdesk\/patient\/\d+$/)) return 'Detalhes'
+  if (route.path.match(/^\/doctor\/patient\/\d+$/)) return 'Detalhes'
   return ''
 })
 

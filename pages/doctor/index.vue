@@ -190,7 +190,7 @@
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm text-muted-foreground">Receita Mensal</p>
-              <p class="text-2xl font-bold">€ 12.450</p>
+              <p class="text-2xl font-bold">CVE 12.450</p>
             </div>
             <div class="p-2 bg-green-100 dark:bg-green-900 rounded-full">
               <TrendingUpIcon

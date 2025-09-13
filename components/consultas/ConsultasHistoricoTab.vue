@@ -1,8 +1,8 @@
 <template>
   <div class="space-y-4">
-    <div class="flex justify-between items-center mb-4">
+    <!-- <div class="flex justify-between items-center mb-4">
       <h3 class="text-lg font-medium">Histórico de Consultas</h3>
-    </div>
+    </div> -->
 
     <!-- Estado de carregamento -->
     <div

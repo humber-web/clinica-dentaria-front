@@ -70,7 +70,7 @@ const onSubmit = async (e: Event) => {
         return navigateTo("/?refresh=true");
       }
     } else {
-      error.value = "Login inválido";
+      error.value = "Credenciais inválidas";
     }
   } catch (err: any) {
     error.value = err.message || "Erro ao fazer login";
@@ -84,9 +84,9 @@ const onSubmit = async (e: Event) => {
   <Card class="mx-auto max-w-sm">
     <form @submit="onSubmit">
       <CardHeader>
-        <CardTitle class="text-2xl"> Login </CardTitle>
+        <CardTitle class="text-2xl">Iniciar Sessão</CardTitle>
         <CardDescription>
-          Enter your email below to login to your account
+          Introduza o seu email para aceder à sua conta
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -97,36 +97,36 @@ const onSubmit = async (e: Event) => {
               id="email"
               v-model="email"
               type="email"
-              placeholder="m@example.com"
+              placeholder="exemplo@email.com"
               required
             />
           </div>
           <div class="grid gap-2">
             <div class="flex items-center">
-              <Label for="password">Password</Label>
+              <Label for="password">Palavra-passe</Label>
               <a href="#" class="ml-auto inline-block text-sm underline">
-                Forgot your password?
+                Esqueceu-se da palavra-passe?
               </a>
             </div>
             <Input id="password" v-model="password" type="password" required />
           </div>
           <Button type="submit" class="w-full" :disabled="loading">
-            {{ loading ? "Entrando..." : "Login" }}
+            {{ loading ? "A entrar..." : "Entrar" }}
           </Button>
         </div>
         <div v-if="error" class="mt-4">
           <Alert variant="destructive">
             <AlertCircle class="w-4 h-4" />
-            <AlertTitle>Error</AlertTitle>
+            <AlertTitle>Erro</AlertTitle>
             <AlertDescription>
               {{ error }}
             </AlertDescription>
           </Alert>
         </div>
-        <div class="mt-4 text-center text-sm">
-          Don't have an account?
-          <NuxtLink to="/register" class="underline"> Sign up </NuxtLink>
-        </div>
+        <!-- <div class="mt-4 text-center text-sm">
+          Não tem conta?
+          <NuxtLink to="/register" class="underline">Registar-se</NuxtLink>
+        </div> -->
       </CardContent>
     </form>
   </Card>

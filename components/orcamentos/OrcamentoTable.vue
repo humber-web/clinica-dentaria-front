@@ -41,9 +41,9 @@ const formatarData = (data: string) => {
 
 // Função para formatar valores monetários
 const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat("pt-PT", {
+  return new Intl.NumberFormat("cv-CV", {
     style: "currency",
-    currency: "EUR",
+    currency: "CVE",
   }).format(value);
 };
 
@@ -84,8 +84,8 @@ const getEstadoClasses = (estado: string) => {
           <TableHead>Data</TableHead>
           <TableHead>Paciente</TableHead>
           <TableHead>Entidade</TableHead>
-          <TableHead class="text-right">€ Seg.</TableHead>
-          <TableHead class="text-right">€ Pac.</TableHead>
+          <TableHead class="text-right">Seg.</TableHead>
+          <TableHead class="text-right">Pac.</TableHead>
           <TableHead class="text-center">Estado</TableHead>
           <TableHead class="text-center">Ações</TableHead>
         </TableRow>

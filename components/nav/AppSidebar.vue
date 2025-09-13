@@ -128,13 +128,15 @@ const menuConfigurations: MenuConfigurations = {
     { title: "Pacientes", url: "/master/patients", icon: Users },
     { title: "Orcamentos", url: "/master/orcamentos", icon: Receipt },
     { title: "Marcações", url: "/master/marcacoes", icon: Receipt },
+    { title: "Historico", url: "/master/historico", icon: Receipt },
+    { title: "Contabilidade", url: "/master/reports", icon: Receipt },
   ],
   doctor: [
     { title: "Início", url: "/doctor", icon: Home },
-    { title: "Agenda", url: "/doctor/schedule", icon: Calendar },
+    { title: "Agenda", url: "/doctor/marcacoes", icon: Calendar },
     { title: "Pacientes", url: "/doctor/patients", icon: Users },
-    { title: "Relatórios", url: "/doctor/reports", icon: TrendingUp },
-    { title: "Definições", url: "/doctor/settings", icon: Settings },
+    // { title: "Relatórios", url: "/doctor/reports", icon: TrendingUp },
+    // { title: "Definições", url: "/doctor/settings", icon: Settings },
     
   ],
   frontdesk: [

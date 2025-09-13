@@ -19,7 +19,7 @@
 
         <!-- Valor a pagar -->
         <div class="space-y-2">
-          <Label for="valorPagar">Valor a Pagar (€)</Label>
+          <Label for="valorPagar">Valor a Pagar (CVE)</Label>
           <Input
             id="valorPagar"
             v-model.number="valorPagar"
@@ -88,7 +88,7 @@
         <!-- Troco (apenas para dinheiro) -->
         <div v-if="metodoPagamento === 'dinheiro' && valorRecebido > valorPagar" class="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
           <div class="space-y-2">
-            <Label for="valorRecebido">Valor Recebido (€)</Label>
+            <Label for="valorRecebido">Valor Recebido (CVE)</Label>
             <Input
               id="valorRecebido"
               v-model.number="valorRecebido"
@@ -191,9 +191,9 @@ const resetForm = () => {
 };
 
 const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-PT', {
+  return new Intl.NumberFormat('cv-CV', {
     style: 'currency',
-    currency: 'EUR'
+    currency: 'CVE'
   }).format(value);
 };
 
